@@ -1,0 +1,250 @@
+﻿@page "/Administradores/Index"
+@using MegatoursRD.Data
+
+@rendermode InteractiveServer
+
+@inject AdminsService adminsService
+@inject AuthenticationStateProvider AuthStateProvider
+
+@attribute [Authorize(Roles = "admin")]
+@attribute [StreamRendering]
+
+<PageTitle>Registro de Administradores</PageTitle>
+<div class="container mb-4">
+    <div class="card">
+        <div class="row p-2 m-2">
+            <div class="col">
+                <div class="text-left">
+                    <h2 class="text-black"><i class="bi bi-cash-stack"></i>Administradores</h2>
+                </div>
+            </div>
+            <div class="col text-end">
+                <a href="/Administradores/Create" class="btn btn-secondary"><i class="bi bi-plus-lg"></i>Crear</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="card">
+        <div class="card-body">
+            <div class="row mb-4">
+                <div class="col-4">
+                    <div class="input-group" style="width: 250px">
+                        <div class="form-floating">
+                            <InputSelect class="form-select" id="floatingSelect" aria-label="Floating label select example" @bind-Value="@valorEnFiltro">
+                                <option value="" selected disabled>--- Selecciona ---</option>
+                                <option value="idadmin">ID Admin</option>
+                                <option value="idusuario">ID Usuario</option>
+                                <option value="fechaingreso">Fecha de Ingreso</option>
+                                <option value="nombres">Nombre</option>
+                                <option value="email">Email</option>
+                            </InputSelect>
+                            <label for="floatingSelect"><strong>Filtrar en base a...</strong></label>
+                        </div>
+						@*btn restablecer*@
+                        <button type="button" class="btn btn-secondary bi bi-arrow-counterclockwise" @onclick="() => Restablecer()"></button>
+                    </div>
+                </div>
+
+				@*Btn Buscar*@
+                <div class="col">
+                    <div class="input-group" style="width: 500px">
+						@*textbox buscar*@
+                        <div class="form-floating d-flex align-items-center">
+                            <InputText @bind-Value="@criterioBusqueda" class="form-control" placeholder="" id="floatingSearch" />
+                            <label for="floatingSearch">Buscar</label>
+                        </div>
+                        <button @onclick="Buscar" class="btn btn-secondary bi bi-search" type="button"></button>
+                    </div>
+                </div>
+            </div>
+
+            @if (valorEnFiltro == "fechaingreso")
+            {
+                <div class="row mb-4">
+                    <div class="col">
+                        <div class="form-floating">
+                            <InputDate id="desde" class="form-control" @bind-Value=Desde></InputDate>
+                            <label for="desde"><strong>Fecha Inicial</strong></label>
+                        </div>
+                    </div>
+
+                    <div class="col">
+                        <div class="form-floating">
+                            <InputDate id="hasta" class="form-control" @bind-Value=Hasta></InputDate>
+                            <label for="hasta"><strong>Fecha Final</strong></label>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @if (ListaAdmins == null)
+            {
+                <div class="d-flex align-items-center justify-content-center">
+                    <em role="status" class="me-2">Cargando...</em>
+                    <div class="spinner-border" aria-hidden="true"></div>
+                </div>
+            }
+            else
+            {
+                <table class="table table-sm table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>ID Usuario</th>
+                            <th>Nombre</th>
+                            <th>Teléfono</th>
+                            <th>Email</th>
+                            <th>Fecha de Ingreso</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var admin in ListaAdmins)
+                        {
+                            var authState = AuthStateProvider.GetAuthenticationStateAsync();
+                            var userAutenticado = authState.Result.User.Identity.Name;
+                            <tr>
+                                <td>@admin.AdminId</td>
+                                <td>@admin.ApplicationUserId</td>
+                                <td>@admin.Nombre</td>
+                                <td>
+                                    @if (admin.Usuario.PhoneNumber != null)
+                                    {
+                                        @admin.Usuario.PhoneNumber
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning">No disponible</span>
+                                    }
+                                </td>
+                                <td>@admin.Usuario.Email</td>
+                                <td>@admin.FechaIngreso.ToString("dd/MMM/yyyy")</td>
+
+                                @if (userAutenticado == admin.Usuario.Email)
+                                {
+                                    <td>
+                                        <div class="dropdown">
+                                            <a style="cursor: pointer;" class="dropdown-toggle" data-toggle="dropdown">Desplegar</a>
+                                            <div class="dropdown-menu">
+                                                <a href="/Administradores/View/@admin.AdminId/@admin.ApplicationUserId" class="dropdown-item">Ver</a>
+                                                <a href="/Administradores/Edit/@admin.AdminId/@admin.ApplicationUserId" class="dropdown-item">Editar</a>
+                                            </div>
+                                        </div>
+                                    </td>
+                                }
+                                else
+                                {
+                                    <td>
+                                        <div class="dropdown">
+                                            <a style="cursor: pointer;" class="dropdown-toggle" data-toggle="dropdown">Desplegar</a>
+                                            <div class="dropdown-menu">
+                                                <a href="/Administradores/View/@admin.AdminId/@admin.ApplicationUserId" class="dropdown-item">Ver</a>
+                                                <a href="/Administradores/Edit/@admin.AdminId/@admin.ApplicationUserId" class="dropdown-item">Editar</a>
+                                                <a href="/Administradores/Delete/@admin.AdminId/@admin.ApplicationUserId" class="dropdown-item">Eliminar</a>
+                                            </div>
+                                        </div>
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                    <caption>Cant. de Administradores: @ListaAdmins.Count</caption>
+                </table>
+            }
+        </div>
+    </div>
+</div>
+@code {
+    [Inject] ToastService ToastService { get; set; }
+    public List<Admins>? ListaAdmins { get; set; }
+    public string criterioBusqueda { get; set; } = string.Empty;
+    public string valorEnFiltro { get; set; } = string.Empty;
+    public DateTime? Desde { get; set; } = null;
+    public DateTime? Hasta { get; set; } = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Delay(500);
+        ListaAdmins = await adminsService.Listar(x => true);
+    }
+
+    public async Task Buscar()
+    {
+        if (string.IsNullOrEmpty(valorEnFiltro))
+        {
+            ListaAdmins = await adminsService.Listar(x => true);
+            return;
+        }
+
+        criterioBusqueda.Trim().ToLower();
+
+        switch (valorEnFiltro)
+        {
+            case "idadmin":
+                if (string.IsNullOrEmpty(criterioBusqueda))
+                {
+                    return;
+                }
+                if (!criterioBusqueda.All(char.IsDigit))
+                {
+                    return;
+                }
+                ListaAdmins = await adminsService.Listar(lt => lt.AdminId.ToString().Contains(criterioBusqueda));
+                break;
+
+            case "idusuario":
+                if (string.IsNullOrEmpty(criterioBusqueda))
+                {
+                    return;
+                }
+                ListaAdmins = await adminsService.Listar(lt => lt.ApplicationUserId.Contains(criterioBusqueda));
+                break;
+
+            case "fechaingreso":
+                if (Desde == null || Hasta == null)
+                {
+                    return;
+                }
+                if (Desde > Hasta)
+                {
+                    return;
+                }
+                ListaAdmins = await adminsService.Listar(x => x.FechaIngreso >= Desde && x.FechaIngreso <= Hasta);
+                break;
+
+            case "email":
+                if (string.IsNullOrEmpty(criterioBusqueda))
+                {
+                    return;
+                }
+                ListaAdmins = await adminsService.Listar(lt => lt.Usuario.Email.Trim().ToLower()
+                                                            .Contains(criterioBusqueda));
+                break;
+
+            case "nombres":
+                if (string.IsNullOrEmpty(criterioBusqueda))
+                {
+                    return;
+                }
+                ListaAdmins = await adminsService.Listar(lt => lt.Nombre.Trim().ToLower()
+                                                            .Contains(criterioBusqueda));
+                break;
+
+            default:
+                ListaAdmins = await adminsService.Listar(x => true);
+                break;
+        }
+    }
+
+    public async Task Restablecer()
+    {
+        criterioBusqueda = string.Empty;
+        valorEnFiltro = string.Empty;
+        Desde = null;
+        Hasta = null;
+        ToastService.Notify(new(ToastType.Info, "Aviso", "Se han restablecido los criterios de búsqueda"));
+        ListaAdmins = await adminsService.Listar(x => true);
+    }
+}

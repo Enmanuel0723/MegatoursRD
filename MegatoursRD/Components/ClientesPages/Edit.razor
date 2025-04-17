@@ -1,0 +1,180 @@
+﻿@page "/Clientes/Edit/{ClienteID:int}/{UserID}"
+
+@rendermode InteractiveServer
+@inject ClientesServices clientesService
+@inject NavigationManager navigation
+
+@using System.ComponentModel.DataAnnotations
+@using System.Text
+@using System.Text.Encodings.Web
+@using MegatoursRD.Components.Account
+@using MegatoursRD.Components.Account.Pages
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.WebUtilities
+@using MegatoursRD.Data
+
+@inject UserManager<ApplicationUser> UserManager
+@inject IUserStore<ApplicationUser> UserStore
+@inject SignInManager<ApplicationUser> SignInManager
+@inject IEmailSender<ApplicationUser> EmailSender
+@inject ILogger<Register> Logger
+@inject NavigationManager NavigationManager
+@inject IdentityRedirectManager RedirectManager
+@inject RoleManager<IdentityRole> RoleManager
+
+@attribute [Authorize(Roles = "admin")]
+
+<PageTitle>Editar Cliente</PageTitle>
+<div class="container mb-4">
+    <div class="card">
+        <div class="text-left">
+            <h2 style="background-color:white; padding:5px;"><i class="bi bi-cash-stack m-1"></i><strong>Editando Cliente</strong></h2>
+        </div>
+    </div>
+</div>
+
+<EditForm Model=@Input onsubmit="Guardar" FormName="Editar">
+    <DataAnnotationsValidator />
+    <div class="container">
+        <div class="card">
+            <div class="card-body">
+                <span class="d-flex justify-content-center mb-3"><h3><strong>Complete la información</strong></h3></span>
+                @if (!string.IsNullOrEmpty(MensajeError))
+                {
+                    <div class="alert alert-danger" role="alert">
+                        @MensajeError
+                    </div>
+                }
+                <div class="row mb-3">
+                    <div class="col">
+                        <label><strong>Nombres y Apellidos *</strong></label>
+                        <InputText required class="form-control" @bind-Value="Input.Name" placeholder="Nombres y Apellidos" />
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col">
+                        <label><strong>Email *</strong></label>
+                        <InputText required type="email" class="form-control" @bind-Value="Input.Email" placeholder="Email" />
+                    </div>
+                    <div class="col">
+                        <label><strong>Teléfono  </strong></label>
+                        <InputText required class="form-control" @bind-Value="Input.PhoneNumber" placeholder="Teléfono" />
+                    </div>
+                </div>
+
+                <div class="text-center">
+                    <button type="submit" class="btn btn-success bi bi-floppy">   Guardar</button>
+                    <a href="/Clientes/Index" class="btn btn-secondary bi bi-arrow-left-circle">   Volver</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter]
+    public int ClienteID { get; set; }
+
+    [Parameter]
+    public string UserID { get; set; }
+
+    public Clientes Cliente { get; set; } = new();
+
+    public ApplicationUser user { get; set; } = default!;
+    public string? email { get; set; }
+    public string? telefono { get; set; }
+
+    public string? MensajeError { get; set; } = string.Empty;
+
+    private IEnumerable<IdentityError>? identityErrors;
+
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = new();
+
+    private string? Message => identityErrors is null ? null : $"Error: {string.Join(", ", identityErrors.Select(error => error.Description))}";
+
+    protected override async Task OnInitializedAsync()
+    {
+        Cliente = await clientesService.Buscar(ClienteID);
+        user = await UserManager.FindByIdAsync(UserID);
+        email = await UserManager.GetEmailAsync(user);
+        telefono = await UserManager.GetPhoneNumberAsync(user);
+        Input.Email = email;
+        Input.PhoneNumber = telefono;
+        Input.Name = Cliente.Nombre;
+    }
+
+    public async Task Guardar()
+    {
+        user.UserName = Input.Name;
+        var emailStore = GetEmailStore();
+        await emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
+        await UserManager.SetPhoneNumberAsync(user, Input.PhoneNumber);
+        var result = await UserManager.UpdateAsync(user);
+
+        if (!result.Succeeded || await clientesService.ValidarUsername(Input.Name) != null)
+        {
+            MensajeError = "El Username no puede tener caracteres especiales, ni espacios o está ocupado";
+            identityErrors = result.Errors;
+            return;
+        }
+
+        Logger.LogInformation("El usuario con rol de cliente se ha editado exitosamente.");
+        Cliente.Nombre = Input.Name;
+        await clientesService.Guardar(Cliente);
+        NavigationManager.NavigateTo("/Clientes/Index");
+    }
+
+    private ApplicationUser CreateUser()
+    {
+        try
+        {
+            return Activator.CreateInstance<ApplicationUser>();
+        }
+        catch
+        {
+            throw new InvalidOperationException($"Can't create an instance of '{nameof(ApplicationUser)}'. " +
+                $"Ensure that '{nameof(ApplicationUser)}' is not an abstract class and has a parameterless constructor.");
+        }
+    }
+
+    private IUserEmailStore<ApplicationUser> GetEmailStore()
+    {
+        if (!UserManager.SupportsUserEmail)
+        {
+            throw new NotSupportedException("The default UI requires a user store with email support.");
+        }
+        return (IUserEmailStore<ApplicationUser>)UserStore;
+    }
+
+    private sealed class InputModel
+    {
+        [Required]
+        [EmailAddress]
+        [Display(Name = "Email")]
+        public string Email { get; set; } = "";
+
+        [Required]
+        [Display(Name = "Name")]
+        public string Name { get; set; } = "";
+
+        [Required]
+        [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
+        [DataType(DataType.Password)]
+        [Display(Name = "Password")]
+        public string Password { get; set; } = "";
+
+        [DataType(DataType.Password)]
+        [Display(Name = "Confirm password")]
+        [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
+        public string ConfirmPassword { get; set; } = "";
+
+        [Required(ErrorMessage = "El número de teléfono es obligatorio.")]
+        [Display(Name = "Número de Teléfono")]
+        [DataType(DataType.PhoneNumber)]
+        [RegularExpression(@"^\+?[0-9\s\-()]{7,15}$", ErrorMessage = "Ingrese un número de teléfono válido.")]
+        public string PhoneNumber { get; set; } = "";
+
+    }
+}

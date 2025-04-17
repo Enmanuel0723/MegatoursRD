@@ -1,0 +1,368 @@
+﻿@page "/Solicitudes/Create/{UserID}/{ClienteID:int}"
+
+@rendermode InteractiveServer
+@inject ClientesServices clientesService
+@inject NavigationManager navigation
+
+@using System.ComponentModel.DataAnnotations
+@using System.Text
+@using System.Text.Encodings.Web
+@using MegatoursRD.Components.Account
+@using MegatoursRD.Components.Account.Pages
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.WebUtilities
+@using MegatoursRD.Data
+
+@inject UserManager<ApplicationUser> UserManager
+@inject IUserStore<ApplicationUser> UserStore
+@inject SignInManager<ApplicationUser> SignInManager
+@inject IEmailSender<ApplicationUser> EmailSender
+@inject ILogger<Register> Logger
+@inject NavigationManager NavigationManager
+@inject IdentityRedirectManager RedirectManager
+@inject RoleManager<IdentityRole> RoleManager
+@inject ClientesServices clientesService
+@inject DestinosService destinosService
+@inject SolicitudViajesService solicitudExcursionesService
+
+@attribute [Authorize(Roles = "cliente, admin")]
+
+<PageTitle>Nueva Solicitud</PageTitle>
+<div class="container mb-4">
+    <div class="card">
+        <div class="text-left">
+            <h2 style="background-color:white; padding:5px;"><i class="bi bi-cash-stack m-1"></i><strong>Creando Solicitud de Viaje</strong></h2>
+        </div>
+    </div>
+</div>
+
+<EditForm Model="Solicitud" OnValidSubmit="Enviar">
+    <DataAnnotationsValidator />
+    <div class="container">
+        <div class="card">
+            <div class="card-body">
+
+                <span class="d-flex justify-content-center mb-3"><h3><strong>Complete la información</strong></h3></span>
+                <div class="row mb-3">
+                    <div class="col">
+                        <label><strong>Asunto *</strong></label>
+                        <InputText required class="form-control" @bind-Value="Solicitud.Asunto" placeholder="Asunto" />
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <AuthorizeView Context="auth">
+                        <Authorized>
+                            @if (auth.User.IsInRole("admin"))
+                            {
+                                <div class="col">
+                                    <label><strong>Cliente *</strong></label>
+                                    <InputSelect required class="form-select" @bind-Value="Solicitud.ClienteId">
+                                        <option value="0" selected disabled>--- Selecciona ---</option>
+                                        @foreach (var cliente in ListaClientes)
+                                        {
+                                            <option value="@cliente.ClienteId">@cliente.Nombre</option>
+                                        }
+                                    </InputSelect>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="col">
+                                    <label><strong>Cliente</strong></label>
+                                    <InputText required disabled class="form-control" @bind-Value=Cliente.Nombre/>
+                                    @{Solicitud.ClienteId = ClienteID;}
+                                </div>
+                            }
+                        </Authorized>
+                    </AuthorizeView>
+
+
+                    <div class="col">
+                        <label><strong>Fecha estipulada  *</strong></label>
+                        <InputDate required class="form-control" @bind-Value="Solicitud.FechaEstipulada" />
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(MensajeError))
+                {
+                    <div class="alert alert-danger" role="alert">
+                        @MensajeError
+                    </div>
+                }
+
+                <div class="container mb-3">
+                    <div class="border border-success p-3 mt-3">
+                        <div>
+                            <h3 class="text-center"><strong>Detalle de la solicitud</strong></h3>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col">
+                                <label><strong>Destino *</strong></label>
+                                <InputSelect required class="form-select" @bind-Value="Solicitud.IdDestino">
+                                    <option value="0" selected disabled>--- Selecciona ---</option>
+                                    @foreach (var destino in ListaDestinos)
+                                    {
+                                        <option value="@destino.DestinoId">@destino.Ciudad -- Cupos: @destino.Cupos</option>
+                                    }
+                                </InputSelect>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col">
+                                <label><strong>Cantidad de adultos *</strong></label>
+                                <InputNumber required class="form-control" @bind-Value="Solicitud.CantAdultos" />
+                            </div>
+                            <div class="col">
+                                <label><strong>Cantidad de niños *</strong></label>
+                                <InputNumber class="form-control" @bind-Value="Solicitud.CantNinos" />
+                            </div>
+                            <div class="col d-flex justify-content-center">
+                                <label><strong></strong></label>
+                                <button type="button" @onclick="Agregar" class="btn btn-outline-success">Agregar</button>
+                            </div>
+                        </div>
+                        @if (!string.IsNullOrEmpty(MensajeErrorDetalle))
+                        {
+                            <div class="alert alert-danger" role="alert">
+                                @MensajeErrorDetalle
+                            </div>
+                        }
+                        <table class="table table-sm table-hover table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Ciudad</th>
+                                    <th>Descripción</th>
+                                    <th>Adultos</th>
+                                    <th>Monto</th>
+                                    <th>Niños</th>
+                                    <th>Monto</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var detalle in Solicitud.ListaDetalles)
+                                {
+                                    <tr>
+                                        <td>@detalle.DestinoId</td>
+                                        <td>@detalle.Ciudad</td>
+                                        <td>@detalle.Descripcion</td>
+                                        <td>@detalle.CantAdultos</td>
+                                        <td>@detalle.PrecioAdultos.ToString("N2")</td>
+                                        <td>@detalle.CantNinos</td>
+                                        <td>@detalle.PrecioNinos.ToString("N2")</td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-outline-danger bi bi-trash3" @onclick="(() => RemoverDetalle(detalle))">Remover</button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th>Total</th>
+                                    <th></th>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td>RD$@Solicitud.Precio.ToString("N2")</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col">
+                        <label><strong>¿Algo más que debamos saber?</strong></label>
+                        <TextAreaInput class="form-control" @bind-Value="Solicitud.Nota" />
+                    </div>
+                </div>
+
+                <div class="text-center">
+                    <button type="submit" class="btn btn-success bi bi-floppy">   Enviar</button>
+                    <a href="/Solicitudes/@UserID/@ClienteID" class="btn btn-secondary bi bi-arrow-left-circle">   Volver</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</EditForm>
+
+@code {
+    [Parameter]
+    public string UserID { get; set; }
+    [Parameter]
+    public int ClienteID { get; set; }
+    public Clientes Cliente { get; set; } = new();
+    public SolicitudViajes Solicitud { get; set; } = new();
+    public SolicitudViajesDetalle SolicitudDetalle { get; set; } = new();
+    public List<Clientes> ListaClientes { get; set; } = new();
+    public List<Destinos> ListaDestinos { get; set; } = new();
+    public int valorDestinoEnviado { get; set; } = 0;
+
+    public string MensajeError { get; set; } = string.Empty;
+    public string MensajeErrorDetalle { get; set; } = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Cliente = await clientesService.Buscar(ClienteID);
+        ListaDestinos = await destinosService.Listar(x => true);
+        ListaClientes = await clientesService.Listar(x => true);
+    }
+
+    public async Task Enviar(EditContext editContext)
+    {
+        MensajeError = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(Solicitud.Asunto) ||
+            Solicitud.ClienteId <= 0 ||
+            Solicitud.ListaDetalles == null)
+        {
+            MensajeError = "Por favor, complete todos los campos requeridos";
+            return;
+        }
+
+        if (Solicitud.FechaEstipulada == default)
+        {
+            MensajeError = "Por favor, introduzca una fecha valida";
+            return;
+        }
+
+        if (Solicitud.FechaEstipulada < DateTime.Now)
+        {
+            MensajeError = "La fecha no puede ser menor o igual a la actual";
+            return;
+        }
+
+        var cantAdultos = 0;
+        var cantNinos = 0;
+        var destinosEnDetalle = new List<string>();
+        var cantPersonasPorDetalle = Solicitud.CantNinos + Solicitud.CantAdultos;
+        var destino = await destinosService.Buscar(Solicitud.IdDestino);
+
+        if (destino == null && Solicitud != null)
+            destino = default;
+        else
+        {
+            if (destino == null)
+            {
+                MensajeErrorDetalle = "Por favor, seleccione un destino";
+                return;
+            }
+            if (cantPersonasPorDetalle > destino.Cupos)
+            {
+                MensajeError = "La cantidad de personas no puede sobrepasar los cupos disponibles";
+                return;
+            }
+        }
+
+        foreach (var detalle in Solicitud.ListaDetalles)
+        {
+            if (detalle.CantAdultos > 0)
+                cantAdultos += detalle.CantAdultos;
+            if (detalle.CantNinos > 0)
+                cantNinos += detalle.CantNinos;
+            destinosEnDetalle.Add(detalle.Ciudad);
+        }
+
+        Solicitud.EstadoId = 2;
+        Solicitud.CantAdultos = cantAdultos;
+        Solicitud.CantNinos = cantNinos;
+        Solicitud.EstadoVencimientoId = 1;
+
+        await solicitudExcursionesService.Guardar(Solicitud);
+        await destinosService.AfectarCupos(destinosEnDetalle.ToArray(), Solicitud);
+
+        NavigationManager.NavigateTo($"/Solicitudes/{UserID}/{ClienteID}");
+    }
+
+    public async Task Agregar()
+    {
+        MensajeErrorDetalle = string.Empty;
+        if (Solicitud.IdDestino == 0)
+        {
+            MensajeErrorDetalle = "Por favor, seleccione un destino";
+            return;
+        }
+        if (Solicitud.CantNinos < 0)
+        {
+            MensajeErrorDetalle = "Por favor, introduzca una cantidad válida";
+            return;
+        }
+
+        var cantPersonas = Solicitud.CantAdultos + Solicitud.CantNinos;
+        var destino = await destinosService.Buscar(Solicitud.IdDestino);
+
+        if (cantPersonas > destino.Cupos)
+        {
+            MensajeErrorDetalle = "La cantidad de personas no puede sobrepasar los cupos disponibles";
+            return;
+        }
+
+        var detalleExistente = Solicitud.ListaDetalles.FirstOrDefault(d => d.SolicitudViajeId == Solicitud.SolicitudViajeId);
+
+        if (detalleExistente != null && detalleExistente.Ciudad == destino.Ciudad)
+        {
+            bool hayAdulto = Solicitud.ListaDetalles.Any(d => d.CantAdultos >= 1);
+            if (Solicitud.CantNinos > 0 && !hayAdulto)
+            {
+                MensajeErrorDetalle = "Debe haber al menos 1 adulto en la lista de detalles para añadir niños";
+                return;
+            }
+            detalleExistente.CantAdultos += Solicitud.CantAdultos;
+            detalleExistente.CantNinos += Solicitud.CantNinos;
+            Solicitud.Precio += (Solicitud.CantAdultos * detalleExistente.PrecioAdultos) + (Solicitud.CantNinos * detalleExistente.PrecioNinos);
+        }
+        else
+        {
+            if (Solicitud.CantAdultos <= 0)
+            {
+                MensajeErrorDetalle = "Debe haber un adulto en la lista de detalles";
+                return;
+            }
+            var nuevoDetalle = new SolicitudViajesDetalle
+                {
+                    SolicitudViajeId = Solicitud.SolicitudViajeId,
+                    SolicitudExcursion = Solicitud,
+                    DestinoId = Solicitud.IdDestino,
+                    Ciudad = destino.Ciudad,
+                    Descripcion = destino.Descripcion,
+                    PrecioAdultos = 1350.0,
+                    PrecioNinos = 750.0,
+                    CantAdultos = Solicitud.CantAdultos,
+                    CantNinos = Solicitud.CantNinos,
+                };
+
+            Solicitud.ListaDetalles.Add(nuevoDetalle);
+            Solicitud.Precio += (nuevoDetalle.CantAdultos * nuevoDetalle.PrecioAdultos) + (nuevoDetalle.CantNinos * nuevoDetalle.PrecioNinos);
+        }
+        Solicitud.CantNinos = 0;
+        Solicitud.CantAdultos = 0;
+        Solicitud.IdDestino = 0;
+    }
+
+    public void RemoverDetalle(SolicitudViajesDetalle detalle)
+    {
+        Solicitud.Precio -= detalle.PrecioAdultos * detalle.CantAdultos;
+        Solicitud.Precio -= detalle.PrecioNinos * detalle.CantNinos;
+        Solicitud.IdDestino = detalle.DestinoId;
+        Solicitud.CantAdultos = detalle.CantAdultos;
+        Solicitud.CantNinos = detalle.CantNinos;
+        Solicitud.ListaDetalles.Remove(detalle);
+    }
+}

@@ -1,0 +1,101 @@
+﻿@page "/Clientes/Delete/{ClienteID:int}/{UserID}"
+
+@rendermode InteractiveServer
+@inject ClientesServices clientesService
+@inject NavigationManager navigation
+
+@using System.ComponentModel.DataAnnotations
+@using System.Text
+@using System.Text.Encodings.Web
+@using MegatoursRD.Components.Account
+@using MegatoursRD.Components.Account.Pages
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.WebUtilities
+@using MegatoursRD.Data
+
+@inject UserManager<ApplicationUser> UserManager
+@inject IUserStore<ApplicationUser> UserStore
+@inject SignInManager<ApplicationUser> SignInManager
+@inject IEmailSender<ApplicationUser> EmailSender
+@inject ILogger<Register> Logger
+@inject NavigationManager NavigationManager
+@inject IdentityRedirectManager RedirectManager
+@inject RoleManager<IdentityRole> RoleManager
+@inject AuthenticationStateProvider AuthStateProvider
+
+@attribute [Authorize(Roles = "admin")]
+
+<PageTitle>Eliminar Cliente | @Cliente.Nombre</PageTitle>
+<div class="container mb-4">
+	<div class="card">
+		<div class="text-left">
+			<h2 style="background-color:white; padding:5px;"><i class="bi bi-cash-stack m-1"></i><strong>Eliminando Cliente</strong></h2>
+		</div>
+	</div>
+</div>
+
+<div class="container">
+	<div class="card">
+		<div class="card-body">
+
+			<div class="d-flex justify-content-center mb-3"><h3><strong>¿Esta seguro que desea eliminar este cliente? </strong></h3></div>
+			<div class="d-flex justify-content-center mb-3">
+				<ul>
+					<li><strong>ID Cliente:</strong> @ClienteID</li>
+					<li><strong>ID Usuario:</strong> @UserID</li>
+					<li><strong>Nombre:</strong> @Cliente.Nombre</li>
+					<li><strong>Teléfono:</strong> @telefono</li>
+					<li><strong>Email:</strong> @email</li>
+				</ul>
+			</div>
+			<div class="text-center">
+				<button type="button" @onclick="Eliminar" class="btn btn-danger bi bi-floppy">   Eliminar</button>
+				<a href="/Clientes/Index" class="btn btn-secondary bi bi-arrow-left-circle">   Volver</a>
+			</div>
+		</div>
+	</div>
+</div>
+
+@code {
+	[Parameter]
+	public int ClienteID { get; set; }
+
+	[Parameter]
+	public string UserID { get; set; } = null!;
+
+	public Clientes Cliente { get; set; } = new();
+	public ApplicationUser user { get; set; } = default!;
+	public string? email { get; set; }
+	public string? telefono { get; set; }
+
+	protected override async Task OnInitializedAsync()
+	{
+		Cliente = await clientesService.Buscar(ClienteID);
+		user = await UserManager.FindByIdAsync(UserID);
+		email = await UserManager.GetEmailAsync(user);
+		telefono = await UserManager.GetPhoneNumberAsync(user);
+	}
+
+	public async Task Eliminar()
+	{
+		try
+		{
+			var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+			var userAutenticado = authState.User;
+
+			if (userAutenticado.Identity.Name == user.UserName)
+			{
+				Logger.LogWarning("No puedes eliminar tu propia cuenta mientras estás logueado.");
+				NavigationManager.NavigateTo("/Clientes/Index", forceLoad: true);
+				return;
+			}
+			await clientesService.Eliminar(ClienteID);
+			await UserManager.DeleteAsync(user);
+		}
+		catch (Exception e)
+		{
+			Logger.LogError("Usuario no encontrado");
+		}
+		NavigationManager.NavigateTo("/Administradores/Index", forceLoad: true);
+	}
+}

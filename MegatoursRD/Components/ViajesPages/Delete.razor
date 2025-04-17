@@ -1,0 +1,133 @@
+﻿@page "/Viajes/Delete/{UserID}/{ViajeID:int}-{ClienteID:int}"
+
+@rendermode InteractiveServer
+@inject ClientesServices clientesService
+@inject GuiasService guiasService
+@inject ViajesService viajesService
+
+@inject UserManager<ApplicationUser> UserManager
+@inject IUserStore<ApplicationUser> UserStore
+@inject SignInManager<ApplicationUser> SignInManager
+@inject IEmailSender<ApplicationUser> EmailSender
+@inject ILogger<Register> Logger
+@inject NavigationManager NavigationManager
+@inject IdentityRedirectManager RedirectManager
+@inject RoleManager<IdentityRole> RoleManager
+@inject ClientesServices clientesService
+@inject DestinosService destinosService
+@inject SolicitudViajesService solicitudExcursionesService
+@inject GuiasService guiasService
+@inject NavigationManager navigation
+
+@using System.ComponentModel.DataAnnotations
+@using System.Text
+@using System.Text.Encodings.Web
+@using MegatoursRD.Components.Account
+@using MegatoursRD.Components.Account.Pages
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.WebUtilities
+@using MegatoursRD.Data
+
+@attribute [Authorize(Roles = "cliente, admin")]
+
+<PageTitle>Eliminar Viaje</PageTitle>
+<div class="container mb-4">
+    <div class="card">
+        <div class="text-left">
+            <h2 style="background-color:white; padding:5px;"><i class="bi bi-cash-stack m-1"></i><strong>Eliminando Viaje</strong></h2>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="card">
+        <div class="card-body">
+
+
+            <span class="d-flex justify-content-center mb-3"><h3><strong>Complete la información</strong></h3></span>
+            <div class="row mb-3">
+                <div class="col">
+                    <label><strong>Guia</strong></label>
+                    <InputSelect required disabled class="form-select" @bind-Value="Viaje.GuiaId">
+                        <option value="0" selected disabled>--- Sin guía ---</option>
+                        @foreach (var guia in ListaGuias)
+                        {
+                            <option value="@guia.GuiaId">@guia.Nombres -- Precio: @guia.PrecioGuia</option>
+                        }
+                    </InputSelect>
+                </div>
+                <div class="col">
+                    <label><strong>Solicitud de Venta *</strong></label>
+                    <InputSelect required disabled class="form-select mb-3" @bind-Value="Viaje.SolicitudViajeId">
+                        <option value="0" selected disabled>--- Selecciona ---</option>
+                        @foreach (var solicitud in ListaSolicitudes)
+                        {
+                            <AuthorizeView Context="auth">
+                                <Authorized>
+                                    @if (solicitud.EstadoVencimientoId == 1 && solicitud.EstadoId == 1 && auth.User.IsInRole("admin"))
+                                    {
+                                        <option value="@solicitud.SolicitudViajeId">@solicitud.Cliente.Nombre -- @solicitud.Asunto -- RD$@solicitud.Precio.ToString("N2")</option>
+                                    }
+                                    else
+                                    {
+                                        if (solicitud.EstadoVencimientoId == 1 && solicitud.EstadoId == 1 && solicitud.ClienteId == ClienteID && solicitud.EstadoOcupacionId == 2)
+                                        {
+                                            <option value="@solicitud.SolicitudViajeId">@solicitud.Cliente.Nombre -- @solicitud.Asunto -- RD$@solicitud.Precio.ToString("N2")</option>
+                                        }
+                                    }
+                                </Authorized>
+                            </AuthorizeView>
+                        }
+                    </InputSelect>
+                </div>
+
+            </div>
+            <div class="text-center">
+                <button @onclick="Eliminar" class="btn btn-danger bi bi-floppy">   Eliminar</button>
+                <a href="/Viajes/Index/@UserID/@ClienteID" class="btn btn-secondary bi bi-arrow-left-circle">   Volver</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@code {
+    [Parameter]
+    public string UserID { get; set; }
+    [Parameter]
+    public int ClienteID { get; set; }
+    [Parameter]
+    public int ViajeID { get; set; }
+    public Clientes Cliente { get; set; } = new();
+    public Viajes Viaje { get; set; } = new();
+    public Guias Guia { get; set; } = new();
+    public List<Guias> ListaGuias { get; set; } = new();
+    public List<SolicitudViajes> ListaSolicitudes { get; set; } = new();
+    public SolicitudViajes Solicitud { get; set; } = new();
+    public string MensajeError { get; set; } = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Cliente = await clientesService.Buscar(ClienteID);
+        ListaSolicitudes = await solicitudExcursionesService.Listar(x => true);
+        ListaGuias = await guiasService.Listar(x => true);
+        Viaje = await viajesService.Buscar(ViajeID);
+        Solicitud = await solicitudExcursionesService.BuscarPorClienteId(ClienteID);
+    }
+
+    public async Task Eliminar()
+    {
+        try
+        {
+            Solicitud.EstadoOcupacionId = 1;
+            await solicitudExcursionesService.Guardar(Solicitud);
+            await viajesService.Eliminar(Viaje.ViajeId);
+        }
+        catch (Exception e)
+        {
+            MensajeError = "Error al eliminar el viaje: " + e.Message;
+            return;
+        }
+        NavigationManager.NavigateTo($"/Viajes/Index/{UserID}/{ClienteID}");
+    }
+}

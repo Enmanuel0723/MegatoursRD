@@ -1,0 +1,183 @@
+﻿@page "/Viajes/Index/{UserID}/{ViajeID:int}-{ClienteID:int}"
+
+@using System.ComponentModel.DataAnnotations
+
+@rendermode InteractiveServer
+
+@inject ClientesServices clientesService
+@inject GuiasService guiasService
+@inject SolicitudViajesService solicitudViajesService
+@inject ViajesService viajesService
+@inject NavigationManager NavigationManager
+
+
+<PageTitle>Pagos</PageTitle>
+<div class="container mb-4">
+    <div class="card">
+        <div class="text-left">
+            <h2 style="background-color:white; padding:5px;"><i class="bi bi-cash-stack m-1"></i><strong>Pagos</strong></h2>
+        </div>
+    </div>
+</div>
+
+@page "/FormularioPago"
+
+
+<EditForm Model="Tarjeta" OnValidSubmit="ProcesarPago">
+    <DataAnnotationsValidator />
+
+    <div class="container">
+        <div class="card mt-4">
+            <div class="card-body">
+                <span class="d-flex justify-content-center mb-3">
+                    <h3><strong>Complete la información de pago</strong></h3>
+                </span>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label"><strong>Nombre en la tarjeta *</strong></label>
+                        <InputText class="form-control" @bind-Value="Tarjeta.NombreTitular" required />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label"><strong>Número de tarjeta *</strong></label>
+                        <InputText class="form-control" @bind-Value="Tarjeta.NumeroTarjeta" required maxlength="16" />
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label"><strong>Fecha de expiración (MM/AA) *</strong></label>
+                        <InputText class="form-control" @bind-Value="Tarjeta.FechaExpiracion" maxlength="5" minlength="5"
+                        required placeholder="MM/AA" @oninput="FormatearFechaExpiracion" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label"><strong>CVV *</strong></label>
+                        <div class="input-group">
+                            <input type="@CvvInputType" class="form-control" @bind="Tarjeta.CVV" maxlength="4" required />
+                            <button type="button" class="btn btn-secondary" @onclick="ToggleCvv">
+                                @(MostrarCvv ? "Ocultar" : "Mostrar")
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col md-6">
+                        <InputSelect class="form-select" @bind-Value="Viaje.ViajeId">
+                            <option value="0" selected disabled>-- Seleciona --</option>
+                            @foreach (var viaje in ListaViajes)
+                            {
+                                if (viaje.EstadoId == 4 && viaje.SolicitudViaje.ClienteId == ClienteID && viaje.ViajeId == ViajeID)
+                                {
+                                    <option value="@viaje.ViajeId">@Cliente.Nombre -- RD$@viaje.PrecioFinal.ToString("N2")</option>
+                                }
+                            }
+                        </InputSelect>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(MensajeError))
+                {
+                    <div class="alert alert-danger" role="alert">
+                        @MensajeError
+                    </div>
+                }
+
+                <div class="text-center mt-4">
+                    <button type="submit" class="btn btn-success bi bi-credit-card">  Pagar</button>
+                    <a href="/Viajes/Index/@UserID/@ClienteID" class="btn btn-secondary bi bi-arrow-left-circle">  Volver</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter]
+    public string UserID { get; set; }
+    [Parameter]
+    public int ClienteID { get; set; }
+    [Parameter]
+    public int ViajeID { get; set; }
+    public Clientes Cliente { get; set; } = new();
+    public SolicitudViajes Solicitud { get; set; } = new();
+    public List<Viajes> ListaViajes { get; set; } = new();
+    public Viajes Viaje { get; set; } = new();
+    public string MensajeError { get; set; } = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Cliente = await clientesService.Buscar(ClienteID);
+        Viaje = await viajesService.Buscar(ViajeID);
+        Solicitud = await solicitudViajesService.BuscarPorClienteId(ClienteID);
+        ListaViajes = await viajesService.Listar(x => true);
+    }
+
+    private TarjetaCredito Tarjeta = new();
+    private bool MostrarCvv = false;
+    private string CvvInputType => MostrarCvv ? "text" : "password";
+
+    private void FormatearFechaExpiracion(ChangeEventArgs e)
+    {
+        string valor = e.Value.ToString().Replace("/", "");
+
+        if (valor.Length > 2)
+        {
+            valor = valor.Insert(2, "/");
+        }
+
+        Tarjeta.FechaExpiracion = valor;
+    }
+
+    private void ToggleCvv()
+    {
+        MostrarCvv = !MostrarCvv;
+    }
+
+    private async void ProcesarPago()
+    {
+        // Aquí puedes procesar el pago o simplemente mostrar una alerta simulada
+        Console.WriteLine($"Pagando con la tarjeta de {Tarjeta.NombreTitular}");
+        // Simulación de validación adicional
+
+        if (Viaje.ViajeId == 0)
+        {
+            MensajeError = "Seleccione el viaje a pagar";
+        }
+        else
+        {
+            MensajeError = string.Empty;
+        }
+
+        if (string.IsNullOrWhiteSpace(Tarjeta.CVV))
+        {
+            MensajeError = "Por favor ingrese el CVV.";
+        }
+        else
+        {
+            MensajeError = string.Empty;
+        }
+        if (Solicitud.FechaEstipulada < DateTime.Now) Viaje.EstadoPagoId = 3;
+        else Viaje.EstadoPagoId = 1;
+        await viajesService.Guardar(Viaje);
+        NavigationManager.NavigateTo($"/Viajes/Index/{UserID}/{ClienteID}");
+    }
+
+    // Modelo de tarjeta temporal, no se guarda en BD
+    public sealed class TarjetaCredito
+    {
+        [Required]
+        public string NombreTitular { get; set; } = string.Empty;
+
+        [Required]
+        [CreditCard]
+        public string NumeroTarjeta { get; set; } = string.Empty;
+
+        [Required]
+        public string FechaExpiracion { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(4, MinimumLength = 3)]
+        public string CVV { get; set; } = string.Empty;
+    }
+}

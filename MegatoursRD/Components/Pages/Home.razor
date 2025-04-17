@@ -1,0 +1,609 @@
+@page "/"
+@using MegatoursRD.Components.Account
+@using MegatoursRD.Components.Account.Pages
+@using MegatoursRD.Data
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Identity.EntityFrameworkCore
+@using Microsoft.AspNetCore.WebUtilities
+@using Microsoft.Build.Framework
+@using System.ComponentModel.DataAnnotations
+@using System.Text.Encodings.Web
+@using System.Text
+@using Microsoft.Extensions.Logging
+
+@inject UserManager<ApplicationUser> UserManager
+@inject IUserStore<ApplicationUser> UserStore
+@inject SignInManager<ApplicationUser> SignInManager
+@inject IEmailSender<ApplicationUser> EmailSender
+@inject ILogger<Home> Logger
+@inject NavigationManager NavigationManager
+@inject IdentityRedirectManager RedirectManager
+@inject RoleManager<IdentityRole> RoleManager
+@inject ClientesServices clientesService
+@inject AdminsService adminsService
+
+<PageTitle>MegatoursRD | San Francisco de Mácoris</PageTitle>
+
+<!-- Topbar Start -->
+<div class="container-fluid bg-light pt-3 d-none d-lg-block">
+
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-6 text-center text-lg-left mb-2 mb-lg-0">
+                <div class="d-inline-flex align-items-center">
+                    <p><i class="fa fa-envelope mr-2"></i>info@megatoursrd.com</p>
+                    <p class="text-body px-3">|</p>
+                    <p><i class="fa fa-phone-alt mr-2"></i>+1 809 220 1111</p>
+                </div>
+            </div>
+            <div class="col-lg-6 text-center text-lg-right">
+                <div class="d-inline-flex align-items-center">
+                    <a class="text-primary px-3" href="">
+                        <i class="fab fa-facebook-f"></i>
+                    </a>
+                    <a class="text-primary px-3" href="">
+                        <i class="fab fa-twitter"></i>
+                    </a>
+                    <a class="text-primary px-3" href="">
+                        <i class="fab fa-linkedin-in"></i>
+                    </a>
+                    <a class="text-primary px-3" href="">
+                        <i class="fab fa-instagram"></i>
+                    </a>
+                    <a class="text-primary pl-3" href="">
+                        <i class="fab fa-youtube"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Topbar End -->
+
+<!-- Navbar Start -->
+<NavMenu />
+<!-- Navbar End -->
+
+<!-- Carousel Start -->
+<div class="container-fluid p-0">
+    <div id="header-carousel" class="carousel slide" data-ride="carousel">
+        <div class="carousel-inner">
+            <div class="carousel-item active">
+                <img class="w-100" src="img/carousel-1.jpg" alt="Image">
+                <div class="carousel-caption d-flex flex-column align-items-center justify-content-center">
+                    <div class="p-3" style="max-width: 900px;">
+                        <h4 class="text-white text-uppercase mb-md-3">Tours & Viajes</h4>
+                        <h1 class="display-3 text-white mb-md-4">¡Descubramos el mundo juntos!</h1>
+                        <a href="" class="btn btn-primary py-md-3 px-md-5 mt-2">Reservar Ahora</a>
+                    </div>
+                </div>
+            </div>
+            <div class="carousel-item">
+                <img class="w-100" src="img/carousel-2.jpg" alt="Image">
+                <div class="carousel-caption d-flex flex-column align-items-center justify-content-center">
+                    <div class="p-3" style="max-width: 900px;">
+                        <h4 class="text-white text-uppercase mb-md-3">Tours & Viajes</h4>
+                        <h1 class="display-3 text-white mb-md-4">Descubre Lugares Increibles Con Nosotros</h1>
+                        <AuthorizeView>
+                            <Authorized>
+                                <a href="/Solicitudes/Create/@UserID" class="btn btn-primary py-md-3 px-md-5 mt-2">Reserva Ahora</a>
+                            </Authorized>
+                            <NotAuthorized>
+                                <a href="/Account/Register" class="btn btn-primary py-md-3 px-md-5 mt-2">Reserva Ahora</a>
+                            </NotAuthorized>
+                        </AuthorizeView>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <a class="carousel-control-prev" href="#header-carousel" data-slide="prev">
+            <div class="btn btn-dark" style="width: 45px; height: 45px;">
+                <span class="carousel-control-prev-icon mb-n2"></span>
+            </div>
+        </a>
+        <a class="carousel-control-next" href="#header-carousel" data-slide="next">
+            <div class="btn btn-dark" style="width: 45px; height: 45px;">
+                <span class="carousel-control-next-icon mb-n2"></span>
+            </div>
+        </a>
+    </div>
+</div>
+<!-- Carousel End -->
+
+<!-- About Start -->
+<div class="container-fluid py-5">
+    <div class="container pt-5">
+        <div class="row">
+            <div class="col-lg-6" style="min-height: 500px;">
+                <div class="position-relative h-100">
+                    <img class="position-absolute w-100 h-100" src="img/about.jpg" style="object-fit: cover;">
+                </div>
+            </div>
+            <div class="col-lg-6 pt-5 pb-lg-5">
+                <div class="about-text bg-white p-4 p-lg-5 my-lg-5">
+                    <h6 class="text-primary text-uppercase" style="letter-spacing: 5px;">About Us</h6>
+                    <h1 class="mb-3">Ofrecemos los mejores paquetes turísticos según su presupuesto.</h1>
+                    <p>Descubre destinos increíbles con opciones diseñadas a tu medida. ¡Viaja sin preocupaciones y al mejor precio!</p>
+                    <div class="row mb-4">
+                        <div class="col-6">
+                            <img class="img-fluid" src="img/about-1.jpg" alt="">
+                        </div>
+                        <div class="col-6">
+                            <img class="img-fluid" src="img/about-2.jpg" alt="">
+                        </div>
+                    </div>
+                    <AuthorizeView Roles="admin, cliente">
+                        <Authorized>
+                            <a href="/Reservaciones" class="btn btn-primary mt-1">Reservar Ahora</a>
+                        </Authorized>
+                        <NotAuthorized>
+                            <a href="/Account/Register" class="btn btn-primary mt-1">Reservar Ahora</a>
+                        </NotAuthorized>
+                    </AuthorizeView>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- About End -->
+
+<!-- Feature Start -->
+<div class="container-fluid pb-5">
+    <div class="container pb-5">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="d-flex mb-4 mb-lg-0">
+                    <div class="d-flex flex-shrink-0 align-items-center justify-content-center bg-primary mr-3" style="height: 100px; width: 100px;">
+                        <i class="fa fa-2x fa-money-check-alt text-white"></i>
+                    </div>
+                    <div class="d-flex flex-column">
+                        <h5 class="">Precio Competitivo</h5>
+                        <p class="m-0">Ofrecemos las mejores tarifas sin comprometer la calidad de tu viaje.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="d-flex mb-4 mb-lg-0">
+                    <div class="d-flex flex-shrink-0 align-items-center justify-content-center bg-primary mr-3" style="height: 100px; width: 100px;">
+                        <i class="fa fa-2x fa-award text-white"></i>
+                    </div>
+                    <div class="d-flex flex-column">
+                        <h5 class="">El Mejor Servicio</h5>
+                        <p class="m-0">Atención personalizada y soporte en cada etapa de tu viaje.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="d-flex mb-4 mb-lg-0">
+                    <div class="d-flex flex-shrink-0 align-items-center justify-content-center bg-primary mr-3" style="height: 100px; width: 100px;">
+                        <i class="fa fa-2x fa-globe text-white"></i>
+                    </div>
+                    <div class="d-flex flex-column">
+                        <h5 class="">Cobertura Nacional</h5>
+                        <p class="m-0">Llega a cualquier destino del país con nuestras soluciones de viaje.</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+<!-- Feature End -->
+
+<!-- Destination Start -->
+<div class="container-fluid py-5">
+    <div class="container pt-5 pb-3">
+        <div class="text-center mb-3 pb-3">
+            <h6 class="text-primary text-uppercase" style="letter-spacing: 5px;">Destinos</h6>
+            <h1>Explora Nuestros Destinos</h1>
+        </div>
+        <div class="row">
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="destination-item position-relative overflow-hidden mb-2">
+                    <img class="img-fluid" src="img/destination-1.jpg" alt="">
+                    <a class="destination-overlay text-white text-decoration-none" href="">
+                        <h5 class="text-white">United States</h5>
+                        <span>100 Cities</span>
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="destination-item position-relative overflow-hidden mb-2">
+                    <img class="img-fluid" src="img/destination-2.jpg" alt="">
+                    <a class="destination-overlay text-white text-decoration-none" href="">
+                        <h5 class="text-white">United Kingdom</h5>
+                        <span>100 Cities</span>
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="destination-item position-relative overflow-hidden mb-2">
+                    <img class="img-fluid" src="img/destination-3.jpg" alt="">
+                    <a class="destination-overlay text-white text-decoration-none" href="">
+                        <h5 class="text-white">Australia</h5>
+                        <span>100 Cities</span>
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="destination-item position-relative overflow-hidden mb-2">
+                    <img class="img-fluid" src="img/destination-4.jpg" alt="">
+                    <a class="destination-overlay text-white text-decoration-none" href="">
+                        <h5 class="text-white">India</h5>
+                        <span>100 Cities</span>
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="destination-item position-relative overflow-hidden mb-2">
+                    <img class="img-fluid" src="img/destination-5.jpg" alt="">
+                    <a class="destination-overlay text-white text-decoration-none" href="">
+                        <h5 class="text-white">South Africa</h5>
+                        <span>100 Cities</span>
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="destination-item position-relative overflow-hidden mb-2">
+                    <img class="img-fluid" src="img/destination-6.jpg" alt="">
+                    <a class="destination-overlay text-white text-decoration-none" href="">
+                        <h5 class="text-white">Indonesia</h5>
+                        <span>100 Cities</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Destination Start -->
+
+<!-- Service Start -->
+<div class="container-fluid py-5">
+    <div class="container pt-5 pb-3">
+        <div class="text-center mb-3 pb-3">
+            <h6 class="text-primary text-uppercase" style="letter-spacing: 5px;">Servicios</h6>
+            <h1>Servicios de Tours & Viajes</h1>
+        </div>
+        <div class="row">
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="service-item bg-white text-center mb-2 py-5 px-4">
+                    <i class="fa fa-2x fa-route mx-auto mb-4"></i>
+                    <h5 class="mb-2">Guías de Viajes</h5>
+                    <p class="m-0">Ofrecemos guías personalizadas para tus viajes, con información detallada sobre los mejores destinos, atracciones turísticas y consejos locales para una experiencia única.</p>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="service-item bg-white text-center mb-2 py-5 px-4">
+                    <i class="fa fa-2x fa-ticket-alt mx-auto mb-4"></i>
+                    <h5 class="mb-2">Reservación de Tickets</h5>
+                    <p class="m-0">Facilitamos la compra y reservación de boletos de avión, tren, o autobús para que tu viaje sea lo más conveniente posible. Asegura tu lugar con nosotros, sin complicaciones.</p>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="service-item bg-white text-center mb-2 py-5 px-4">
+                    <i class="fa fa-2x fa-hotel mx-auto mb-4"></i>
+                    <h5 class="mb-2">Reservación de Hotel</h5>
+                    <p class="m-0">Encuentra el alojamiento perfecto para tu estancia. Ofrecemos opciones que se adaptan a tus necesidades y presupuesto, desde hoteles de lujo hasta opciones más accesibles.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Service End -->
+
+<!-- Registration Start -->
+<AuthorizeView>
+    <NotAuthorized>
+        <div class="container-fluid bg-registration py-5" style="margin: 90px 0;">
+            <div class="container py-5">
+                <div class="row align-items-center">
+                    <div class="col-lg-7 mb-5 mb-lg-0">
+                        <div class="mb-4">
+                            <h6 class="text-primary text-uppercase" style="letter-spacing: 5px;">¡Mega Oferta!</h6>
+                            <h1 class="text-white"><span class="text-primary">30% OFF</span> En Las Lunas de Miel!</h1>
+                        </div>
+                        <p class="text-white">
+                            Aprovecha esta oportunidad en tu luna de miel y vive una experiencia inolvidable en los mejores destinos.
+                            ¡Reserva ahora y haz realidad el viaje de tus sueños!
+                        </p>
+                        <ul class="list-inline text-white m-0">
+                            <li class="py-2"><i class="fa fa-check text-primary mr-3"></i>Vive la luna de miel de tus sueños</li>
+                            <li class="py-2"><i class="fa fa-check text-primary mr-3"></i>Destinos románticos ideales para parejas</li>
+                            <li class="py-2"><i class="fa fa-check text-primary mr-3"></i>Reservas flexibles para tu tranquilidad</li>
+                        </ul>
+
+                    </div>
+                    <div class="col-lg-5">
+                        <div class="card border-0">
+                            <div class="card-header bg-primary text-center p-4">
+                                <h1 class="text-white m-0">¡Registrate Gratis!</h1>
+                            </div>
+                            <div class="card-body rounded-bottom bg-white p-5">
+                                <StatusMessage Message="@Message" />
+                                <EditForm Model="Input" asp-route-returnUrl="@ReturnUrl" method="post" OnValidSubmit="RegisterUser" FormName="register" tForm>
+                                    <ChildContent Context="editContext">
+                                        <DataAnnotationsValidator />
+                                        <div class="form-group">
+                                            <InputText @bind-Value="Input.Nombres" class="form-control p-4" placeholder="Nombres y Apellidos" required="required" />
+                                        </div>
+                                        <div class="form-group">
+                                            <InputText @bind-Value="Input.Email" type="email" class="form-control p-4" placeholder="Email" required="required" />
+                                        </div>
+                                        <div class="form-group">
+                                            <InputText @bind-Value="Input.PhoneNumber" type="tel" class="form-control p-4" placeholder="Teléfono" required="required" />
+                                        </div>
+                                        <div class="form-group">
+                                            <InputText @bind-Value="Input.Password" type="password" class="form-control p-4" placeholder="Contraseña" required="required" />
+                                        </div>
+                                        <div class="form-group">
+                                            <InputText @bind-Value="Input.ConfirmPassword" type="password" class="form-control p-4" placeholder="Confirmar Contraseña" required="required" />
+                                        </div>
+                                        <div>
+                                            <button class="btn btn-primary btn-block py-3" type="submit">Registrarse</button>
+                                        </div>
+                                    </ChildContent>
+                                </EditForm>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+<!-- Registration End -->
+
+<!-- Team Start -->
+<div class="container-fluid py-5">
+    <div class="container pt-5 pb-3">
+        <div class="text-center mb-3 pb-3">
+            <h6 class="text-primary text-uppercase" style="letter-spacing: 5px;"> Gu&iacute;as</h6>
+            <h1>Nuestro Equipo de Gu&iacute;as</h1>
+        </div>
+        <div class="row">
+            <div class="col-lg-3 col-md-4 col-sm-6 pb-2">
+                <div class="team-item bg-white mb-4">
+                    <div class="team-img position-relative overflow-hidden">
+                        <img class="img-fluid w-100" src="img/team-1.jpg" alt="">
+                        <div class="team-social">
+                            <a class="btn btn-outline-primary btn-square" href=""><i class="fab fa-twitter"></i></a>
+                            <a class="btn btn-outline-primary btn-square" href=""><i class="fab fa-facebook-f"></i></a>
+                            <a class="btn btn-outline-primary btn-square" href=""><i class="fab fa-instagram"></i></a>
+                            <a class="btn btn-outline-primary btn-square" href=""><i class="fab fa-linkedin-in"></i></a>
+                        </div>
+                    </div>
+                    <div class="text-center py-4">
+                        <h5 class="text-truncate">Margarita Hernandez</h5>
+                        <p class="m-0">Abogada Migratória</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-4 col-sm-6 pb-2">
+                <div class="team-item bg-white mb-4">
+                    <div class="team-img position-relative overflow-hidden">
+                        <img class="img-fluid w-100" src="img/team-2.jpg" alt="">
+                        <div class="team-social">
+                            <a class="btn btn-outline-primary btn-square" href=""><i class="fab fa-twitter"></i></a>
+                            <a class="btn btn-outline-primary btn-square" href=""><i class="fab fa-facebook-f"></i></a>
+                            <a class="btn btn-outline-primary btn-square" href=""><i class="fab fa-instagram"></i></a>
+                            <a class="btn btn-outline-primary btn-square" href=""><i class="fab fa-linkedin-in"></i></a>
+                        </div>
+                    </div>
+                    <div class="text-center py-4">
+                        <h5 class="text-truncate">Jorge Ceballos</h5>
+                        <p class="m-0">Guía Turístico</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-4 col-sm-6 pb-2">
+                <div class="team-item bg-white mb-4">
+                    <div class="team-img position-relative overflow-hidden">
+                        <img class="img-fluid w-100" src="img/team-3.jpg" alt="">
+                        <div class="team-social">
+                            <a class="btn btn-outline-primary btn-square" href=""><i class="fab fa-twitter"></i></a>
+                            <a class="btn btn-outline-primary btn-square" href=""><i class="fab fa-facebook-f"></i></a>
+                            <a class="btn btn-outline-primary btn-square" href=""><i class="fab fa-instagram"></i></a>
+                            <a class="btn btn-outline-primary btn-square" href=""><i class="fab fa-linkedin-in"></i></a>
+                        </div>
+                    </div>
+                    <div class="text-center py-4">
+                        <h5 class="text-truncate">Alexandra Terrero</h5>
+                        <p class="m-0">Guía Turístico</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-4 col-sm-6 pb-2">
+                <div class="team-item bg-white mb-4">
+                    <div class="team-img position-relative overflow-hidden">
+                        <img class="img-fluid w-100" src="img/team-4.jpg" alt="">
+                        <div class="team-social">
+                            <a class="btn btn-outline-primary btn-square" href=""><i class="fab fa-twitter"></i></a>
+                            <a class="btn btn-outline-primary btn-square" href=""><i class="fab fa-facebook-f"></i></a>
+                            <a class="btn btn-outline-primary btn-square" href=""><i class="fab fa-instagram"></i></a>
+                            <a class="btn btn-outline-primary btn-square" href=""><i class="fab fa-linkedin-in"></i></a>
+                        </div>
+                    </div>
+                    <div class="text-center py-4">
+                        <h5 class="text-truncate">Saúl Cremades</h5>
+                        <p class="m-0">Guía Turístico</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Team End -->
+
+<!-- Footer Start -->
+<PageFooter />
+<!-- Footer End -->
+
+<!-- Back to Top -->
+<a href="#" class="btn btn-lg btn-primary btn-lg-square back-to-top"><i class="fa fa-angle-double-up"></i></a>
+
+@code {
+    [Parameter] public string UserID { get; set; }
+
+    private IEnumerable<IdentityError>? identityErrors;
+
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = new();
+
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    private string? Message => identityErrors is null ? null : $"Error: {string.Join(", ", identityErrors.Select(error => error.Description))}";
+
+    public List<Admins> ListaAdmin { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if ((ListaAdmin = await adminsService.Listar(x => true)).Count == 0)
+        {
+            var userAdmin = CreateUser();
+
+            await UserStore.SetUserNameAsync(userAdmin, "Admin", CancellationToken.None);
+            var emailStore = GetEmailStore();
+            await emailStore.SetEmailAsync(userAdmin, "Admin@prueba.com", CancellationToken.None);
+            await UserManager.SetPhoneNumberAsync(userAdmin, string.Empty);
+            userAdmin.PasswordHash = "Contraseña123@";
+            userAdmin.EmailConfirmed = true;
+            var result = await UserStore.CreateAsync(userAdmin, CancellationToken.None);
+
+            if (!result.Succeeded)
+            {
+                identityErrors = result.Errors;
+                await UserManager.DeleteAsync(userAdmin);
+                return;
+            }
+
+            var rol = "admin";
+            if (!await RoleManager.RoleExistsAsync(rol))
+                await RoleManager.CreateAsync(new IdentityRole(rol));
+
+            await UserManager.AddToRoleAsync(userAdmin, rol);
+
+            if (!result.Succeeded)
+            {
+                await UserManager.DeleteAsync(userAdmin);
+                return;
+            }
+
+            Logger.LogInformation("El usuario con rol de admin se ha creado exitosamente.");
+
+            Admins admin = new();
+            admin.ApplicationUserId = userAdmin.Id;
+            admin.Nombre = userAdmin.UserName;
+            admin.FechaIngreso = DateTime.Now;
+
+            if (!await adminsService.Guardar(admin))
+                await UserManager.DeleteAsync(userAdmin);
+        }
+    }
+
+    public async Task RegisterUser(EditContext editContext)
+    {
+        var user = CreateUser();
+
+        await UserStore.SetUserNameAsync(user, Input.Nombres, CancellationToken.None);
+        await UserManager.SetPhoneNumberAsync(user, Input.PhoneNumber);
+        var emailStore = GetEmailStore();
+        await emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
+        user.PasswordHash = Input.Password;
+        var result = await UserStore.CreateAsync(user, CancellationToken.None);
+
+        if (!result.Succeeded)
+        {
+            identityErrors = result.Errors;
+            return;
+        }
+
+        var rol = "cliente";
+        if (!await RoleManager.RoleExistsAsync(rol))
+            await RoleManager.CreateAsync(new IdentityRole(rol));
+
+        await UserManager.AddToRoleAsync(user, rol);
+
+        if (!result.Succeeded)
+        {
+            await UserManager.DeleteAsync(user);
+            return;
+        }
+
+        Logger.LogInformation("User created a new account with password.");
+
+        var userId = await UserManager.GetUserIdAsync(user);
+        var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
+        code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+        var callbackUrl = NavigationManager.GetUriWithQueryParameters(
+            NavigationManager.ToAbsoluteUri("Account/ConfirmEmail").AbsoluteUri,
+            new Dictionary<string, object?> { ["userId"] = userId, ["code"] = code, ["returnUrl"] = ReturnUrl });
+
+        await EmailSender.SendConfirmationLinkAsync(user, Input.Email, HtmlEncoder.Default.Encode(callbackUrl));
+
+        Clientes cliente = new();
+        cliente.AplicationUserId = user.Id;
+        cliente.Nombre = Input.Nombres;
+        await clientesService.Guardar(cliente);
+
+        if (UserManager.Options.SignIn.RequireConfirmedAccount)
+        {
+            RedirectManager.RedirectTo(
+                "Account/RegisterConfirmation",
+                new() { ["email"] = Input.Email, ["returnUrl"] = ReturnUrl });
+        }
+        await SignInManager.SignInAsync(user, isPersistent: false);
+        RedirectManager.RedirectTo(ReturnUrl);
+    }
+
+    private ApplicationUser CreateUser()
+    {
+        try
+        {
+            return Activator.CreateInstance<ApplicationUser>();
+        }
+        catch
+        {
+            throw new InvalidOperationException($"Can't create an instance of '{nameof(ApplicationUser)}'. " +
+                $"Ensure that '{nameof(ApplicationUser)}' is not an abstract class and has a parameterless constructor.");
+        }
+    }
+
+    private IUserEmailStore<ApplicationUser> GetEmailStore()
+    {
+        if (!UserManager.SupportsUserEmail)
+        {
+            throw new NotSupportedException("The default UI requires a user store with email support.");
+        }
+        return (IUserEmailStore<ApplicationUser>)UserStore;
+    }
+
+    private sealed class InputModel
+    {
+        [System.ComponentModel.DataAnnotations.Required]
+        [Display(Name = "Nombres")]
+        public string Nombres { get; set; } = "";
+
+        [System.ComponentModel.DataAnnotations.Required]
+        [EmailAddress]
+        [Display(Name = "Email")]
+        public string Email { get; set; } = "";
+
+        [System.ComponentModel.DataAnnotations.Required]
+        [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
+        [DataType(DataType.Password)]
+        [Display(Name = "Password")]
+        public string Password { get; set; } = "";
+
+        [DataType(DataType.Password)]
+        [Display(Name = "Confirm password")]
+        [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
+        public string ConfirmPassword { get; set; } = "";
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "El número de teléfono es obligatorio.")]
+        [Display(Name = "Número de Teléfono")]
+        [DataType(DataType.PhoneNumber)]
+        [RegularExpression(@"^\+?[0-9\s\-()]{7,15}$", ErrorMessage = "Ingrese un número de teléfono válido.")]
+        public string PhoneNumber { get; set; } = "";
+    }
+}

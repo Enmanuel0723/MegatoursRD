@@ -1,0 +1,394 @@
+﻿@page "/Viajes/Index/{UserID}/{ClienteID:int}"
+
+@rendermode InteractiveServer
+@attribute [StreamRendering]
+
+@inject SolicitudViajesService solicitudViajesService
+@inject ViajesService viajesService
+@inject ClientesServices clientesService
+@inject GuiasService guiasService
+@inject AuthenticationStateProvider AuthStateProvider
+
+@attribute [Authorize(Roles = "cliente, admin")]
+
+<PageTitle>Registro de Viajes</PageTitle>
+<div class="container mb-4">
+    <div class="card">
+        <div class="row p-2 m-2">
+            <div class="col">
+                <div class="text-left">
+                    <h2 class="text-black"><i class="bi bi-people"></i>Mis Viajes</h2>
+                </div>
+            </div>
+            <div class="col text-end">
+                <AuthorizeView Roles="admin">
+                    <Authorized>
+                        <a href="/Clientes/Index" class="btn btn-secondary"><i class="bi bi-plus-lg"></i>Volver</a>
+                    </Authorized>
+                </AuthorizeView>
+                <AuthorizeView Roles="cliente">
+                    <Authorized>
+                        <a href="/" class="btn btn-secondary"><i class="bi bi-plus-lg"></i>Volver</a>
+                    </Authorized>
+                </AuthorizeView>
+                <a href="/Viajes/Create/@UserID/@ClienteID" class="btn btn-secondary"><i class="bi bi-plus-lg"></i>Crear</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="card">
+        <div class="card-body">
+            <div class="row mb-4">
+                <div class="col-4">
+                    <div class="input-group" style="width: 300px">
+                        <div class="form-floating">
+                            <InputSelect class="form-select" id="floatingSelect" aria-label="Floating label select example" @bind-Value="@valorEnFiltro">
+                                <option value="" selected disabled>--- Selecciona ---</option>
+                                <option value="idviaje">ID Viaje</option>
+                                <option value="guia">Guia</option>
+                                <AuthorizeView Roles="admin">
+                                    <Authorized>
+                                        <option value="cliente">Cliente</option>
+                                    </Authorized>
+                                </AuthorizeView>
+                                <option value="estado">Estado</option>
+                                <option value="estadopago">Estado de pago</option>
+                                <option value="fecha">Fecha</option>
+                            </InputSelect>
+                            <label for="floatingSelect"><strong>Filtrar en base a...</strong></label>
+                        </div>
+						@*btn restablecer*@
+                        <button type="button" class="btn btn-secondary bi bi-arrow-counterclockwise" @onclick="() => Restablecer()">Limpiar</button>
+                    </div>
+                </div>
+
+				@*Btn Buscar*@
+                <div class="col">
+                    <div class="input-group" style="width: 500px">
+						@*textbox buscar*@
+                        <div class="form-floating d-flex align-items-center">
+                            <InputText @bind-Value="@criterioBusqueda" class="form-control" placeholder="" id="floatingSearch" />
+                            <label for="floatingSearch">Buscar</label>
+                        </div>
+                        <button @onclick="Buscar" class="btn btn-secondary bi bi-search" type="button">Buscar</button>
+                    </div>
+                </div>
+            </div>
+
+            @if (valorEnFiltro == "fecha")
+            {
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label for="fechaInicial" class="form-label">Fecha inicial *</label>
+                        <InputDate @bind-Value="Desde" class="form-control" />
+                    </div>
+                    <div class="col-md-6">
+                        <label for="fechaFinal" class="form-label">Fecha final *</label>
+                        <InputDate @bind-Value="Hasta" class="form-control" />
+                    </div>
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(MensajeError))
+            {
+                <div class="alert alert-danger" role="alert">
+                    @MensajeError
+                </div>
+            }
+
+            @if (ListaViajes == null)
+            {
+                <div class="d-flex align-items-center justify-content-center">
+                    <em role="status" class="me-2">Cargando...</em>
+                    <div class="spinner-border" aria-hidden="true"></div>
+                </div>
+            }
+            else
+            {
+                <table class="table table-sm table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <AuthorizeView Roles="admin">
+                                <Authorized>
+                                    <th>Cliente</th>
+                                </Authorized>
+                            </AuthorizeView>
+                            <th>Guía</th>
+                            <th>Adultos</th>
+                            <th>Niños</th>
+                            <th>Estado</th>
+                            <th>Estado de pago</th>
+                            <th>Fecha Estipulada</th>
+                            <th>Monto</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var viaje in ListaViajes)
+                        {
+                            try
+                            {
+                                if (viaje.SolicitudViaje.ClienteId == Cliente.ClienteId || userAutenticado.IsInRole("admin"))
+                                {
+                                    <tr>
+                                        <td>@viaje.ViajeId</td>
+                                        <AuthorizeView Roles="admin">
+                                            <Authorized>
+                                                <td>@Cliente.Nombre</td>
+                                            </Authorized>
+                                        </AuthorizeView>
+                                        <td>
+                                            @switch (viaje.Guia)
+                                            {
+                                                case null:
+                                                    <span class="badge rounded-pill text-bg-secondary">Sin guía</span>
+                                                    break;
+                                                default:
+                                                    @viaje.Guia.Nombres
+                                                    break;
+                                            }
+                                        </td>
+                                        <td>@viaje.SolicitudViaje.CantAdultos</td>
+                                        <td>@viaje.SolicitudViaje.CantNinos</td>
+                                        <td>
+                                            @switch (viaje.EstadoId)
+                                            {
+                                                case 4:
+                                                    <span class="badge badge-pill bg-success">Abierto</span>
+                                                    break;
+                                                case 5:
+                                                    <span class="badge badge-pill bg-danger">Finalizado</span>
+                                                    break;
+                                                default:
+                                                    <span class="badge rounded-pill text-bg-secondary">Desconocido</span>
+                                                    break;
+                                            }
+                                        </td>
+                                        <td>
+                                            @switch (viaje.EstadoPagoId)
+                                            {
+                                                case 1:
+                                                    <span class="badge badge-pill bg-success">Pagado</span>
+                                                    break;
+                                                case 2:
+                                                    <span class="badge badge-pill bg-danger">No pagado</span>
+                                                    break;
+                                                case 3:
+                                                    <span class="badge badge-pill bg-warning text-dark">Vencido</span>
+                                                    break;
+                                                default:
+                                                    <span class="badge rounded-pill text-bg-secondary">Desconocido</span>
+                                                    break;
+                                            }
+                                        </td>
+                                        <td>@viaje.SolicitudViaje.FechaEstipulada.ToString("dd/MMM/yyyy")</td>
+                                        <td>RD$@viaje.PrecioFinal.ToString("N2")</td>
+                                        <td>
+                                            <div class="dropdown">
+                                                <a style="cursor: pointer;" class="dropdown-toggle" data-toggle="dropdown">Desplegar</a>
+                                                <div class="dropdown-menu">
+                                                    <a href="/Viajes/View/@UserID/@viaje.ViajeId-@ClienteID" class="dropdown-item">Ver</a>
+                                                    <a href="/Viajes/Edit/@UserID/@viaje.ViajeId-@ClienteID" class="dropdown-item">Editar</a>
+                                                    <a href="/Viajes/Delete/@UserID/@viaje.ViajeId-@ClienteID" class="dropdown-item">Eliminar</a>
+                                                    <a href="/Viajes/Pagar/@UserID/@viaje.ViajeId-@ClienteID" class="dropdown-item">Pagar</a>
+
+                                                    <AuthorizeView Roles="admin">
+                                                        <Authorized>
+                                                            <div class="dropdown-divider"></div>
+                                                            <div class="dropdown-header">Cambiar estado</div>
+                                                            <div class="dropdown-divider"></div>
+                                                            <button @onclick="(() => CambiarEstado(viaje.ViajeId,4))" class="dropdown-item">Abierto</button>
+                                                            <button @onclick="(() => CambiarEstado(viaje.ViajeId,5))" class="dropdown-item">Finalizado</button>
+                                                            <div class="dropdown-divider"></div>
+                                                            <div class="dropdown-header">Cambiar estado de pago</div>
+                                                            <div class="dropdown-divider"></div>
+                                                            <button @onclick="(() => CambiarEstadoPago(viaje.ViajeId,1))" class="dropdown-item">Pagado</button>
+                                                            <button @onclick="(() => CambiarEstadoPago(viaje.ViajeId,2))" class="dropdown-item">No pagado</button>
+                                                            <button @onclick="(() => CambiarEstadoPago(viaje.ViajeId,3))" class="dropdown-item">Vencido</button>
+                                                        </Authorized>
+                                                    </AuthorizeView>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    ViajesPorCliente++;
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                Console.WriteLine($"Error en el index de solicitudes: {e.Message}");
+                            }
+                        }
+                    </tbody>
+                    <caption>Cant. de Viajes: @ViajesPorCliente</caption>
+                </table>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string UserID { get; set; }
+    [Parameter] public int ClienteID { get; set; }
+    [Parameter] public int GuiaID { get; set; }
+    public Clientes Cliente { get; set; } = new();
+    public List<Viajes>? ListaViajes { get; set; }
+    public SolicitudViajes Solicitud { get; set; } = new();
+    public List<Guias> ListaGuias { get; set; } = new();
+    private System.Security.Claims.ClaimsPrincipal? userAutenticado;
+    public string criterioBusqueda { get; set; } = string.Empty;
+    public string valorEnFiltro { get; set; } = string.Empty;
+    public DateTime? Desde { get; set; } = null;
+    public DateTime? Hasta { get; set; } = null;
+    public string MensajeError { get; set; } = string.Empty;
+    public int ViajesPorCliente = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Delay(500);
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        userAutenticado = authState.User;
+        ListaGuias = await guiasService.Listar(x => true);
+        Cliente = await clientesService.Buscar(ClienteID);
+        Solicitud = await solicitudViajesService.BuscarPorClienteId(ClienteID);
+        ListaViajes = await viajesService.Listar(x => true);
+    }
+
+    public async Task CambiarEstado(int viajeId, int nuevoEstadoId)
+    {
+        var viaje = await viajesService.Buscar(viajeId);
+
+        if (viaje == null)
+        {
+            return;
+        }
+
+        viaje.EstadoId = nuevoEstadoId;
+        var resultado = await viajesService.Guardar(viaje);
+
+        if (!resultado)
+        {
+            return;
+        }
+
+        ListaViajes = await viajesService.Listar(x => true);
+        StateHasChanged();
+
+    }
+
+    public async Task CambiarEstadoPago(int viajeId, int nuevoEstadoId)
+    {
+        var viaje = await viajesService.Buscar(viajeId);
+
+        if (viaje == null)
+        {
+            return;
+        }
+
+        viaje.EstadoPagoId = nuevoEstadoId;
+        var resultado = await viajesService.Guardar(viaje);
+
+        if (!resultado)
+        {
+            return;
+        }
+
+        ListaViajes = await viajesService.Listar(x => true);
+        StateHasChanged();
+    }
+
+    public async Task Buscar()
+    {
+        MensajeError = "";
+        if (string.IsNullOrEmpty(valorEnFiltro))
+        {
+            ListaViajes = await viajesService.Listar(x => true);
+            return;
+        }
+
+        criterioBusqueda.Trim().ToLower();
+
+        switch (valorEnFiltro)
+        {
+            case "idviaje":
+                if (string.IsNullOrEmpty(criterioBusqueda) || !criterioBusqueda.All(char.IsDigit))
+                {
+                    MensajeError = "Debe escribir un ID valido";
+                    return;
+                }
+                ListaViajes = await viajesService.Listar(lt => lt.SolicitudViajeId.ToString().Contains(criterioBusqueda));
+                break;
+
+            case "cliente":
+                if (string.IsNullOrEmpty(criterioBusqueda))
+                {
+                    MensajeError = "Debe escribir un nombre valido";
+                    return;
+                }
+                ListaViajes = await viajesService.Listar(lt => lt.SolicitudViaje.Cliente.Nombre.Trim().ToLower()
+                                                            .Contains(criterioBusqueda));
+                break;
+
+            case "guia":
+                if (string.IsNullOrEmpty(criterioBusqueda))
+                {
+                    return;
+                }
+                ListaViajes = await viajesService.Listar(lt => lt.Guia.Nombres.Trim().ToLower()
+                                                            .Contains(criterioBusqueda));
+                break;
+
+            case "estado":
+                if (!criterioBusqueda.All(char.IsDigit))
+                {
+                    MensajeError = "Debe escribir un ID Estado valido";
+                    return;
+                }
+                ListaViajes = await viajesService.Listar(lt => lt.EstadoId.ToString().Trim().ToLower()
+                                                            .Contains(criterioBusqueda));
+                break;
+
+            case "estadopago":
+                if (!criterioBusqueda.All(char.IsDigit))
+                {
+                    MensajeError = "Debe escribir un ID Estado de pago valido";
+                    return;
+                }
+                ListaViajes = await viajesService.Listar(lt => lt.EstadoPagoId.ToString().Trim().ToLower()
+                                                            .Contains(criterioBusqueda));
+                break;
+
+            case "fecha":
+                if (Desde == null || Hasta == null)
+                {
+                    MensajeError = "Ambas campos de fecha deben ser llenados";
+                    return;
+                }
+                if (Desde > Hasta)
+                {
+                    MensajeError = "La fecha inicial no puede ser mayor a la final";
+                    return;
+                }
+                ListaViajes = await viajesService.Listar(lt => lt.SolicitudViaje.FechaEstipulada >= Desde && lt.SolicitudViaje.FechaEstipulada <= Hasta);
+                break;
+
+            default:
+                ListaViajes = await viajesService.Listar(x => true);
+                break;
+        }
+    }
+
+    public async Task Restablecer()
+    {
+        MensajeError = string.Empty;
+        criterioBusqueda = string.Empty;
+        valorEnFiltro = string.Empty;
+        Desde = null;
+        Hasta = null;
+        ListaViajes= await viajesService.Listar(x => true);
+    }
+}
+

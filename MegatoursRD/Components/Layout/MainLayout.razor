@@ -1,0 +1,87 @@
+﻿@using MegatoursRD.Data
+@using Microsoft.AspNetCore.Identity
+@inherits LayoutComponentBase
+
+<div class="page">
+    <Toasts class="p-3" AutoHide="true" Delay="4000" Placement="ToastsPlacement.TopRight" />
+    <main>
+        <div class="top-row d-flex justify-content-between align-items-center">
+            <div class="text-start">
+                <a href="/">
+                    <h1 class="text-primary"><span class="text-dark">MEGATOURS</span>RD</h1>
+                </a>
+            </div>
+
+            <AuthorizeView Roles="admin">
+                <Authorized>
+                    <div class="d-flex justify-content-end">
+                        <a href="Administradores/Index" class="nav-item nav-link">Administradores</a>
+                        <a href="Clientes/Index" class="nav-item nav-link">Clientes</a>
+                    </div>
+                </Authorized>
+            </AuthorizeView>
+
+            <AuthorizeView>
+                <Authorized>
+                    <div class="d-flex justify-content-end">
+
+                        <span>¡Hola, @NombreUsuarioAutenticado!</span>
+                        <div class="dropdown">
+                            <a style="cursor: pointer;" class="dropdown-toggle" data-toggle="dropdown">Opciones</a>
+                            <div class="dropdown-menu">
+                                <a href="/Account/Manage" class="dropdown-item">Mi Cuenta</a>
+                                <form action="Account/Logout" method="post">
+                                    <AntiforgeryToken />
+                                    <input type="hidden" name="ReturnUrl" value="@currentUrl" />
+                                    <button type="submit" class="dropdown-item">Cerrar Sesi&oacute;n</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </Authorized>
+                <NotAuthorized>
+                    <div>
+                        <a href="/Account/Login" class="btn btn-secondary">Iniciar Sesión</a>
+                        <a href="/Account/Register" class="btn btn-secondary">Registrarse</a>
+                    </div>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+
+
+        <article class="content px-4">
+            @Body
+        </article>
+    </main>
+</div>
+
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">🗙</span>
+</div>
+
+@code {
+    private string? currentUrl;
+    public string? NombreUsuarioAutenticado { get; set; }
+    [Inject]
+    NavigationManager NavigationManager { get; set; } = null!;
+
+    [Inject]
+    AuthenticationStateProvider AuthStateProvider { get; set; } = null!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var userAutenticado = authState.User;
+        NombreUsuarioAutenticado = userAutenticado.Identity.Name;
+        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
+        StateHasChanged();
+    }
+}

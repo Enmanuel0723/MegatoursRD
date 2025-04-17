@@ -1,0 +1,77 @@
+﻿@page "/Administradores/View/{AdminID:int}/{UserID}"
+
+@rendermode InteractiveServer
+@inject AdminsService adminsService
+@inject NavigationManager navigation
+
+@using System.ComponentModel.DataAnnotations
+@using System.Text
+@using System.Text.Encodings.Web
+@using MegatoursRD.Components.Account
+@using MegatoursRD.Components.Account.Pages
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.WebUtilities
+@using MegatoursRD.Data
+
+@inject UserManager<ApplicationUser> UserManager
+@inject IUserStore<ApplicationUser> UserStore
+@inject SignInManager<ApplicationUser> SignInManager
+@inject IEmailSender<ApplicationUser> EmailSender
+@inject ILogger<Register> Logger
+@inject NavigationManager NavigationManager
+@inject IdentityRedirectManager RedirectManager
+@inject RoleManager<IdentityRole> RoleManager
+@inject AuthenticationStateProvider AuthStateProvider
+
+@attribute [Authorize(Roles = "admin")]
+
+<PageTitle>View Administrador | @Admin.Nombre</PageTitle>
+<div class="container mb-4">
+	<div class="card">
+		<div class="text-left">
+			<h2 style="background-color:white; padding:5px;"><i class="bi bi-cash-stack m-1"></i><strong>View Administrador</strong></h2>
+		</div>
+	</div>
+</div>
+
+<div class="container">
+	<div class="card">
+		<div class="card-body">
+
+			<span class="d-flex justify-content-center mb-3"><h3><strong>Detalles del Administrador</strong></h3></span>
+			<div class="d-flex justify-content-center mb-3">
+				<ul>
+					<li><strong>ID Admin:</strong> @AdminID</li>
+					<li><strong>ID Usuario:</strong> @UserID</li>
+					<li><strong>Nombre:</strong> @Admin.Nombre</li>
+					<li><strong>Teléfono:</strong> @telefono</li>
+					<li><strong>Email:</strong> @email</li>
+				</ul>
+			</div>
+			<div class="text-center">
+				<a href="/Administradores/Index" class="btn btn-secondary bi bi-arrow-left-circle">   Volver</a>
+			</div>
+		</div>
+	</div>
+</div>
+
+@code {
+	[Parameter]
+	public int AdminID { get; set; }
+
+	[Parameter]
+	public string UserID { get; set; } = null!;
+
+	public Admins Admin { get; set; } = new();
+	public ApplicationUser user { get; set; } = default!;
+	public string? email { get; set; }
+	public string? telefono { get; set; }
+
+	protected override async Task OnInitializedAsync()
+	{
+		Admin = await adminsService.Buscar(AdminID);
+		user = await UserManager.FindByIdAsync(UserID);
+		email = await UserManager.GetEmailAsync(user);
+		telefono = await UserManager.GetPhoneNumberAsync(user);
+	}
+}

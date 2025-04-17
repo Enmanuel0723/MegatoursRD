@@ -1,0 +1,170 @@
+﻿@page "/Administradores/Edit/{AdminID:int}/{UserID}"
+
+@rendermode InteractiveServer
+@inject AdminsService adminsService
+@inject NavigationManager navigation
+
+@using System.ComponentModel.DataAnnotations
+@using System.Text
+@using System.Text.Encodings.Web
+@using MegatoursRD.Components.Account
+@using MegatoursRD.Components.Account.Pages
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.WebUtilities
+@using MegatoursRD.Data
+
+@inject UserManager<ApplicationUser> UserManager
+@inject IUserStore<ApplicationUser> UserStore
+@inject SignInManager<ApplicationUser> SignInManager
+@inject IEmailSender<ApplicationUser> EmailSender
+@inject ILogger<Register> Logger
+@inject NavigationManager NavigationManager
+@inject IdentityRedirectManager RedirectManager
+@inject RoleManager<IdentityRole> RoleManager
+@inject IdentityUserAccessor UserAccessor
+
+@attribute [Authorize(Roles = "admin")]
+
+<PageTitle>Editando Administrador | @Admin.Nombre</PageTitle>
+<div class="container mb-4">
+	<div class="card">
+		<div class="text-left">
+			<h2 style="background-color:white; padding:5px;"><i class="bi bi-cash-stack m-1"></i><strong>Editando Administrador</strong></h2>
+		</div>
+	</div>
+</div>
+
+<EditForm Model="Input" OnValidSubmit="Guardar" FormName="Editar">
+	<DataAnnotationsValidator />
+	<div class="container">
+		<div class="card">
+			<div class="card-body">
+
+				<span class="d-flex justify-content-center mb-3"><h3><strong>Complete la información</strong></h3></span>
+				@if (!string.IsNullOrEmpty(MensajeError))
+				{
+					<div class="alert alert-danger" role="alert">
+						@MensajeError
+					</div>
+				}
+				<div class="row mb-3">
+					<div class="col">
+						<label><strong>Nombres y Apellidos *</strong></label>
+						<InputText required class="form-control" @bind-Value="Admin.Nombre" placeholder="Nombres y Apellidos" />
+					</div>
+					<div class="col">
+						<label><strong>Fecha de Ingreso *</strong></label>
+						<InputDate required class="form-control" @bind-Value="Admin.FechaIngreso" />
+					</div>
+				</div>
+
+				<div class="row mb-3">
+					<div class="col">
+						<label><strong>Email *</strong></label>
+						<InputText required type="email" class="form-control" @bind-Value="Input.Email" placeholder="Email" />
+					</div>
+					<div class="col">
+						<label><strong>Teléfono  </strong></label>
+						<InputText required class="form-control" @bind-Value="Input.PhoneNumber" placeholder="Teléfono" />
+					</div>
+				</div>
+
+				<div class="text-center">
+					<button type="submit" class="btn btn-success bi bi-floppy">   Guardar</button>
+					<a href="/Administradores/Index" class="btn btn-secondary bi bi-arrow-left-circle">   Volver</a>
+				</div>
+			</div>
+		</div>
+	</div>
+</EditForm>
+
+@code {
+	[Parameter]
+	public int AdminID { get; set; }
+
+	[Parameter]
+	public string UserID { get; set; } = null!;
+
+	public Admins Admin { get; set; } = new();
+	public ApplicationUser user { get; set; } = default!;
+	public string? email { get; set; }
+	public string? telefono { get; set; }
+	public string MensajeError { get; set; } = string.Empty;
+
+	private IEnumerable<IdentityError>? identityErrors;
+
+	[SupplyParameterFromForm]
+	private InputModel Input { get; set; } = new();
+
+	[CascadingParameter]
+	private HttpContext HttpContext { get; set; } = default!;
+
+	private string? Message => identityErrors is null ? null : $"Error: {string.Join(", ", identityErrors.Select(error => error.Description))}";
+
+	protected override async Task OnInitializedAsync()
+	{
+		Admin = await adminsService.Buscar(AdminID);
+		user = await UserManager.FindByIdAsync(UserID);
+		email = await UserManager.GetEmailAsync(user);
+		telefono = await UserManager.GetPhoneNumberAsync(user);
+		Input.Email = email;
+		Input.PhoneNumber = telefono;
+	}
+
+	public async Task Guardar(EditContext editContext)
+	{
+		await UserStore.SetUserNameAsync(user, Admin.Nombre, CancellationToken.None);
+		var emailStore = GetEmailStore();
+		await emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
+		await UserManager.SetPhoneNumberAsync(user, Input.PhoneNumber);
+		var result = await UserManager.UpdateAsync(user);
+
+		if (!result.Succeeded)
+		{
+			MensajeError = "El Username no puede tener caracteres especiales, ni espacios o está ocupado";
+			identityErrors = result.Errors;
+			return;
+		}
+
+		Logger.LogInformation("El usuario con rol de admin se ha editado exitosamente.");
+		await adminsService.Guardar(Admin);
+		try { RedirectManager.RedirectTo("/Administradores/Index"); } 
+		catch (Exception e) { Console.WriteLine($"Warning al redirigir en el edit de admins: {e.Message}"); }
+	}
+
+	private ApplicationUser CreateUser()
+	{
+		try
+		{
+			return Activator.CreateInstance<ApplicationUser>();
+		}
+		catch
+		{
+			throw new InvalidOperationException($"Can't create an instance of '{nameof(ApplicationUser)}'. " +
+				$"Ensure that '{nameof(ApplicationUser)}' is not an abstract class and has a parameterless constructor.");
+		}
+	}
+
+	private IUserEmailStore<ApplicationUser> GetEmailStore()
+	{
+		if (!UserManager.SupportsUserEmail)
+		{
+			throw new NotSupportedException("The default UI requires a user store with email support.");
+		}
+		return (IUserEmailStore<ApplicationUser>)UserStore;
+	}
+
+	private sealed class InputModel
+	{
+		[Required]
+		[EmailAddress]
+		[Display(Name = "Email")]
+		public string Email { get; set; } = "";
+
+		[Display(Name = "Número de Teléfono")]
+		[DataType(DataType.PhoneNumber)]
+		[RegularExpression(@"^\+?[0-9\s\-()]{7,15}$", ErrorMessage = "Ingrese un número de teléfono válido.")]
+		public string PhoneNumber { get; set; } = "";
+
+	}
+}

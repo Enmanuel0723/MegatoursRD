@@ -1,0 +1,236 @@
+﻿@page "/Solicitudes/Delete/{UserID}/{SolicitudID:int}-{ClienteID:int}"
+
+@rendermode InteractiveServer
+@inject ClientesServices clientesService
+@inject NavigationManager navigation
+@inject SolicitudViajesDetalleService solicitudExcursionesDetalleService
+
+@using System.ComponentModel.DataAnnotations
+@using System.Text
+@using System.Text.Encodings.Web
+@using MegatoursRD.Components.Account
+@using MegatoursRD.Components.Account.Pages
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.WebUtilities
+@using MegatoursRD.Data
+
+@inject UserManager<ApplicationUser> UserManager
+@inject IUserStore<ApplicationUser> UserStore
+@inject SignInManager<ApplicationUser> SignInManager
+@inject IEmailSender<ApplicationUser> EmailSender
+@inject ILogger<Register> Logger
+@inject NavigationManager NavigationManager
+@inject IdentityRedirectManager RedirectManager
+@inject RoleManager<IdentityRole> RoleManager
+@inject ClientesServices clientesService
+@inject DestinosService destinosService
+@inject SolicitudViajesService solicitudExcursionesService
+
+@attribute [Authorize(Roles = "cliente, admin")]
+
+<PageTitle>Eliminar Solicitud</PageTitle>
+<div class="container mb-4">
+    <div class="card">
+        <div class="text-left">
+            <h2 style="background-color:white; padding:5px;"><i class="bi bi-cash-stack m-1"></i><strong>Eliminando Solicitud de Viaje</strong></h2>
+        </div>
+    </div>
+</div>
+
+<EditForm Model="@Solicitud" OnValidSubmit="Eliminar">
+    <DataAnnotationsValidator />
+    <div class="container">
+        <div class="card">
+            <div class="card-body">
+
+                <span class="d-flex justify-content-center mb-3"><h3><strong>Complete la información</strong></h3></span>
+                <div class="row mb-3">
+                    <div class="col">
+                        <label><strong>Asunto *</strong></label>
+                        <InputText required class="form-control" disabled @bind-Value="Solicitud.Asunto" placeholder="Asunto" />
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <AuthorizeView Context="auth">
+                        <Authorized>
+                            @if (auth.User.IsInRole("admin"))
+                            {
+                                <div class="col">
+                                    <label><strong>Cliente *</strong></label>
+                                    <InputSelect required disabled class="form-select" @bind-Value="Solicitud.ClienteId">
+                                        <option value="0" selected disabled>--- Selecciona ---</option>
+                                        @foreach (var cliente in ListaClientes)
+                                        {
+                                            <option value="@cliente.ClienteId">@cliente.Nombre</option>
+                                        }
+                                    </InputSelect>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="col">
+                                    <label><strong>Cliente</strong></label>
+                                    <InputText required disabled class="form-control" @bind-Value=Cliente.Nombre />
+                                    @{
+                                        Solicitud.ClienteId = ClienteID;
+                                    }
+                                </div>
+                            }
+                        </Authorized>
+                    </AuthorizeView>
+
+
+                    <div class="col">
+                        <label><strong>Fecha estipulada  *</strong></label>
+                        <InputDate required disabled class="form-control" @bind-Value="Solicitud.FechaEstipulada" />
+                    </div>
+                </div>
+
+                <div class="container mb-3">
+                    <div class="border border-success p-3 mt-3">
+                        <div>
+                            <h3 class="text-center"><strong>Detalle de la solicitud</strong></h3>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col">
+                                <label><strong>Destino *</strong></label>
+                                <InputSelect required disabled class="form-select" @bind-Value="Solicitud.IdDestino">
+                                    <option value="0" selected disabled>--- Selecciona ---</option>
+                                    @foreach (var destino in ListaDestinos)
+                                    {
+                                        <option value="@destino.DestinoId">@destino.Ciudad -- Cupos: @destino.Cupos</option>
+                                    }
+                                </InputSelect>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col">
+                                <label><strong>Cantidad de adultos *</strong></label>
+                                <InputNumber required disabled class="form-control" @bind-Value="Solicitud.CantAdultos" />
+                            </div>
+                            <div class="col">
+                                <label><strong>Cantidad de niños *</strong></label>
+                                <InputNumber disabled class="form-control" @bind-Value="Solicitud.CantNinos" />
+                            </div>
+                        </div>
+
+                        <table class="table table-sm table-hover table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Ciudad</th>
+                                    <th>Descripción</th>
+                                    <th>Adultos</th>
+                                    <th>Monto</th>
+                                    <th>Niños</th>
+                                    <th>Monto</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var detalle in Solicitud.ListaDetalles)
+                                {
+                                    if (detalle.SolicitudViajeId == SolicitudID)
+                                    {
+                                        <tr>
+                                            <td>@detalle.DestinoId</td>
+                                            <td>@detalle.Ciudad</td>
+                                            <td>@detalle.Descripcion</td>
+                                            <td>@detalle.CantAdultos</td>
+                                            <td>@detalle.PrecioAdultos.ToString("N2")</td>
+                                            <td>@detalle.CantNinos</td>
+                                            <td>@detalle.PrecioNinos.ToString("N2")</td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th>Total</th>
+                                    <th></th>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td>RD$@Solicitud.Precio.ToString("N2")</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col">
+                        <label><strong>¿Algo más que debamos saber?</strong></label>
+                        <TextAreaInput disabled class="form-control" @bind-Value="Solicitud.Nota" />
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(MensajeError))
+                {
+                    <div class="alert alert-danger" role="alert">
+                        @MensajeError
+                    </div>
+                }
+
+                <div class="text-center">
+                    <button @onclick="Eliminar" class="btn btn-danger bi bi-floppy">   Eliminar</button>
+                    <a href="/Solicitudes/@UserID/@ClienteID" class="btn btn-secondary bi bi-arrow-left-circle">   Volver</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</EditForm>
+
+@code {
+    [Parameter]
+    public string UserID { get; set; }
+    [Parameter]
+    public int ClienteID { get; set; }
+    [Parameter]
+    public int SolicitudID { get; set; }
+    public Clientes Cliente { get; set; } = new();
+    public SolicitudViajes Solicitud { get; set; } = new();
+    public SolicitudViajesDetalle SolicitudDetalle { get; set; } = new();
+    public List<Clientes> ListaClientes { get; set; } = new();
+    public List<Destinos> ListaDestinos { get; set; } = new();
+    public string MensajeError { get; set; } = string.Empty;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        Cliente = await clientesService.Buscar(ClienteID);
+        Solicitud = await solicitudExcursionesService.Buscar(SolicitudID);
+        Solicitud.ListaDetalles = await solicitudExcursionesDetalleService.Listar(x => true);
+        ListaDestinos = await destinosService.Listar(x => true);
+        ListaClientes = await clientesService.Listar(x => true);
+    }
+
+    public async Task Eliminar()
+    {
+        MensajeError = string.Empty;
+        try
+        {
+            await solicitudExcursionesService.Eliminar(SolicitudID);
+            NavigationManager.NavigateTo($"/Solicitudes/{UserID}/{ClienteID}");
+        }
+        catch (Exception e)
+        {
+            MensajeError = "No se pudo eliminar la solicitud porque esta vinculada a un viaje";
+        }
+    }
+}

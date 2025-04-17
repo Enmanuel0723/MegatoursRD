@@ -1,0 +1,108 @@
+﻿@page "/Administradores/Delete/{AdminID:int}/{UserID}"
+
+@rendermode InteractiveServer
+@inject AdminsService adminsService
+@inject NavigationManager navigation
+
+@using System.ComponentModel.DataAnnotations
+@using System.Text
+@using System.Text.Encodings.Web
+@using MegatoursRD.Components.Account
+@using MegatoursRD.Components.Account.Pages
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.WebUtilities
+@using MegatoursRD.Data
+
+@inject UserManager<ApplicationUser> UserManager
+@inject IUserStore<ApplicationUser> UserStore
+@inject SignInManager<ApplicationUser> SignInManager
+@inject IEmailSender<ApplicationUser> EmailSender
+@inject ILogger<Register> Logger
+@inject NavigationManager NavigationManager
+@inject IdentityRedirectManager RedirectManager
+@inject RoleManager<IdentityRole> RoleManager
+@inject AuthenticationStateProvider AuthStateProvider
+
+@attribute [Authorize(Roles = "admin")]
+
+<PageTitle>Eliminar Administrador | @Admin.Nombre</PageTitle>
+<div class="container mb-4">
+	<div class="card">
+		<div class="text-left">
+			<h2 style="background-color:white; padding:5px;"><i class="bi bi-cash-stack m-1"></i><strong>Eliminando Administrador</strong></h2>
+		</div>
+	</div>
+</div>
+
+<div class="container">
+	<div class="card">
+		<div class="card-body">
+
+			<span class="d-flex justify-content-center mb-3"><h3><strong>¿Esta seguro que desea eliminar este admin? </strong></h3></span>
+			@if (!string.IsNullOrEmpty(MensajeError))
+			{
+				<div class="alert alert-danger" role="alert">
+					@MensajeError
+				</div>
+			}
+			<div class="d-flex justify-content-center mb-3">
+				<ul>
+					<li><strong>ID Admin:</strong> @AdminID</li>
+					<li><strong>ID Usuario:</strong> @UserID</li>
+					<li><strong>Nombre:</strong> @Admin.Nombre</li>
+					<li><strong>Teléfono:</strong> @telefono</li>
+					<li><strong>Email:</strong> @email</li>
+				</ul>
+			</div>
+			<div class="text-center">
+				<button type="button" @onclick="Eliminar" class="btn btn-danger bi bi-floppy">   Eliminar</button>
+				<a href="/Administradores/Index" class="btn btn-secondary bi bi-arrow-left-circle">   Volver</a>
+			</div>
+		</div>
+	</div>
+</div>
+
+@code {
+	[Parameter]
+	public int AdminID { get; set; }
+
+	[Parameter]
+	public string UserID { get; set; } = null!;
+
+	public Admins Admin { get; set; } = new();
+	public ApplicationUser user { get; set; } = default!;
+	public string? email { get; set; }
+	public string? telefono { get; set; }
+	public string MensajeError { get; set; } = string.Empty;
+
+	protected override async Task OnInitializedAsync()
+	{
+		Admin = await adminsService.Buscar(AdminID);
+		user = await UserManager.FindByIdAsync(UserID);
+		email = await UserManager.GetEmailAsync(user);
+		telefono = await UserManager.GetPhoneNumberAsync(user);
+	}
+
+	public async Task Eliminar()
+	{
+		try
+		{
+			var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+			var userAutenticado = authState.User;
+
+			if (userAutenticado.Identity.Name == user.UserName)
+			{
+				MensajeError = "No puedes eliminar tu propia cuenta mientras estás logueado.";
+				NavigationManager.NavigateTo("/Administradores/Index", forceLoad: true);
+				return;
+			}
+			await adminsService.Eliminar(AdminID);
+			await UserManager.DeleteAsync(user);
+		}
+		catch (Exception e)
+		{
+			Logger.LogError("Usuario no encontrado");
+		}
+		NavigationManager.NavigateTo("/Administradores/Index", forceLoad: true);
+	}
+}

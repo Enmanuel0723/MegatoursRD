@@ -1,0 +1,198 @@
+﻿@page "/Clientes/Index"
+
+@rendermode InteractiveServer
+@attribute [StreamRendering]
+
+@inject ClientesServices clientesService
+
+@attribute [Authorize(Roles = "admin")]
+
+<PageTitle>Registro de Clientes</PageTitle>
+<div class="container mb-4">
+	<div class="card">
+		<div class="row p-2 m-2">
+			<div class="col">
+				<div class="text-left">
+					<h2 class="text-black"><i class="bi bi-people"></i>Clientes</h2>
+				</div>
+			</div>
+			<div class="col text-end">
+				<a href="/Clientes/Create" class="btn btn-secondary"><i class="bi bi-plus-lg"></i>Crear</a>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="container">
+	<div class="card">
+		<div class="card-body">
+			<div class="row mb-4">
+				<div class="col-4">
+					<div class="input-group" style="width: 300px">
+						<div class="form-floating">
+							<InputSelect class="form-select" id="floatingSelect" aria-label="Floating label select example" @bind-Value="@valorEnFiltro">
+								<option value="" selected disabled>--- Selecciona ---</option>
+								<option value="idcliente">ID Cliente</option>
+								<option value="idusuario">ID Usuario</option>
+								<option value="nombres">Nombre</option>
+								<option value="email">Email</option>
+							</InputSelect>
+							<label for="floatingSelect"><strong>Filtrar en base a...</strong></label>
+						</div>
+						@*btn restablecer*@
+						<button type="button" class="btn btn-secondary bi bi-arrow-counterclockwise" @onclick="() => Restablecer()">Limpiar</button>
+					</div>
+				</div>
+
+				@*Btn Buscar*@
+				<div class="col">
+					<div class="input-group" style="width: 500px">
+						@*textbox buscar*@
+						<div class="form-floating d-flex align-items-center">
+							<InputText @bind-Value="@criterioBusqueda" class="form-control" placeholder="" id="floatingSearch" />
+							<label for="floatingSearch">Buscar</label>
+						</div>
+						<button @onclick="Buscar" class="btn btn-secondary bi bi-search" type="button">Buscar</button>
+					</div>
+				</div>
+			</div>
+
+			@if (ListaClientes == null)
+			{
+				<div class="d-flex align-items-center justify-content-center">
+					<em role="status" class="me-2">Cargando...</em>
+					<div class="spinner-border" aria-hidden="true"></div>
+				</div>
+			}
+			else
+			{
+				<table class="table table-sm table-striped table-hover">
+					<thead>
+						<tr>
+							<th>ID</th>
+							<th>ID Usuario</th>
+							<th>Nombre</th>
+							<th>Teléfono</th>
+							<th>Email</th>
+							<th>Acciones</th>
+						</tr>
+					</thead>
+					<tbody>
+						@foreach (var cliente in ListaClientes)
+						{
+							<tr>
+								<td>@cliente.ClienteId</td>
+								<td>@cliente.AplicationUserId</td>
+								<td>@cliente.Nombre</td>
+								<td>
+									@if (cliente.Usuario.PhoneNumber != null)
+									{
+										@cliente.Usuario.PhoneNumber
+									}
+									else
+									{
+										<span class="badge bg-warning">No disponible</span>
+									}
+								</td>
+								<td>@cliente.Usuario.Email</td>
+								<td>
+									<div class="dropdown">
+										<a style="cursor: pointer;" class="dropdown-toggle" data-toggle="dropdown">Desplegar</a>
+										<div class="dropdown-menu">
+											<a href="/Clientes/View/@cliente.ClienteId/@cliente.AplicationUserId" class="dropdown-item btn btn-sm btn-dark bi-eye">Ver</a>
+											<a href="/Clientes/Edit/@cliente.ClienteId/@cliente.AplicationUserId" class="dropdown-item btn btn-sm  btn-info bi bi-pencil-square">Editar</a>
+											<a href="/Clientes/Delete/@cliente.ClienteId/@cliente.AplicationUserId" class="dropdown-item btn btn-sm btn-danger bi bi-trash3">Eliminar</a>
+											<a href="/Solicitudes/@cliente.AplicationUserId/@cliente.ClienteId" class="dropdown-item btn btn-sm btn-dark">Ver Solicitudes</a>
+											<a href="/Viajes/Index/@cliente.AplicationUserId/@cliente.ClienteId" class="dropdown-item btn btn-sm btn-dark">Ver Viajes</a>
+										</div>
+									</div>
+								</td>
+							</tr>
+						}
+					</tbody>
+					<caption>Cant. de Clientes: @ListaClientes.Count</caption>
+				</table>
+			}
+		</div>
+	</div>
+</div>
+@code {
+	[Inject] ToastService ToastService { get; set; }
+	public List<Clientes>? ListaClientes { get; set; }
+	public string criterioBusqueda { get; set; } = string.Empty;
+	public string valorEnFiltro { get; set; } = string.Empty;
+	public DateTime? Desde { get; set; } = null;
+	public DateTime? Hasta { get; set; } = null;
+
+	protected override async Task OnInitializedAsync()
+	{
+		await Task.Delay(500);
+		ListaClientes = await clientesService.Listar(x => true);
+	}
+
+	public async Task Buscar()
+	{
+		if (string.IsNullOrEmpty(valorEnFiltro))
+		{
+			ListaClientes = await clientesService.Listar(x => true);
+			return;
+		}
+
+		criterioBusqueda.Trim().ToLower();
+
+		switch (valorEnFiltro)
+		{
+			case "idcliente":
+				if (string.IsNullOrEmpty(criterioBusqueda))
+				{
+					return;
+				}
+				if (!criterioBusqueda.All(char.IsDigit))
+				{
+					return;
+				}
+				ListaClientes = await clientesService.Listar(lt => lt.ClienteId.ToString().Contains(criterioBusqueda));
+				break;
+
+			case "idusuario":
+				if (string.IsNullOrEmpty(criterioBusqueda))
+				{
+					return;
+				}
+				ListaClientes = await clientesService.Listar(lt => lt.AplicationUserId.Contains(criterioBusqueda));
+				break;
+
+			case "email":
+				if (string.IsNullOrEmpty(criterioBusqueda))
+				{
+					return;
+				}
+				ListaClientes = await clientesService.Listar(lt => lt.Usuario.Email.Trim().ToLower()
+															.Contains(criterioBusqueda));
+				break;
+
+			case "nombres":
+				if (string.IsNullOrEmpty(criterioBusqueda))
+				{
+					return;
+				}
+				ListaClientes = await clientesService.Listar(lt => lt.Nombre.Trim().ToLower()
+															.Contains(criterioBusqueda));
+				break;
+
+			default:
+				ListaClientes = await clientesService.Listar(x => true);
+				break;
+		}
+	}
+
+	public async Task Restablecer()
+	{
+		criterioBusqueda = string.Empty;
+		valorEnFiltro = string.Empty;
+		Desde = null;
+		Hasta = null;
+		ToastService.Notify(new(ToastType.Info, "Aviso", "Se han restablecido los criterios de búsqueda"));
+		ListaClientes = await clientesService.Listar(x => true);
+	}
+}
