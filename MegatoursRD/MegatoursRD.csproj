@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Update="Components\ClientesPages\Edit.razor">
+    <Content Update="Components\Registros\ClientesPages\Edit.razor">
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
     </Content>
   </ItemGroup>
