@@ -19,7 +19,13 @@ builder.Services.AddScoped<DestinosService>();
 builder.Services.AddScoped<ViajesService>();
 builder.Services.AddScoped<SolicitudViajesDetalleService>();
 builder.Services.AddScoped<GuiasService>();
+builder.Services.AddScoped<CarritoService>();
 builder.Services.AddBlazorBootstrap();
+
+// Carrito anonimo
+builder.Services.AddSession();
+builder.Services.AddDistributedMemoryCache();
+
 
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IdentityUserAccessor>();
@@ -73,6 +79,9 @@ else
 }
 
 app.UseHttpsRedirection();
+
+// Carrito anonimo
+app.UseSession();
 
 
 app.UseAntiforgery();
