@@ -28,9 +28,9 @@
             @foreach (var destino in ListaDestinos)
             {
                 <div class="card mb-5 mr-lg-5" style="width: 18rem;">
-                    @if (string.IsNullOrEmpty(destino.Ciudad))
+                    @if (!string.IsNullOrEmpty(destino.ImagenUrl))
                     {
-                        <img class="img-fluid" src="@destino.ImagenUrl" alt="@destino.Ciudad" style="width: 50px">
+                        <img class="img-fluid d-block mx-auto my-2" src="@destino.ImagenUrl" alt="@destino.Ciudad" style="height: 150px; width: 150px; object-fit: cover;" />
                     }
                     else
                     {
