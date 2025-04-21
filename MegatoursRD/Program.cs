@@ -3,6 +3,7 @@ using MegatoursRD.Components.Account;
 using MegatoursRD.Data;
 using MegatoursRD.Services;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -25,7 +26,6 @@ builder.Services.AddBlazorBootstrap();
 // Carrito anonimo
 builder.Services.AddSession();
 builder.Services.AddDistributedMemoryCache();
-
 
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IdentityUserAccessor>();
