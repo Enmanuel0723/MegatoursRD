@@ -1,0 +1,209 @@
+﻿@page "/Carrito/Checkout"
+
+@rendermode InteractiveServer
+
+@inject CarritoService CarritoService
+@inject ClientesServices clientesService
+@inject ViajesService viajesService
+@inject DestinosService destinosService
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthProvider
+
+@using System.ComponentModel.DataAnnotations
+@using System.Security.Claims;
+
+
+<PageTitle>Carrito</PageTitle>
+<h1>Mi Carrito</h1>
+@if (carrito == null || !carrito.Detalles.Any())
+{
+    <div class="alert alert-info">Tu carrito está vacío.</div>
+}
+else
+{
+    <div class="row">
+        <div class="col col-9">
+            <div class="list-group mb-4">
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <strong>Foto</strong>
+                    <strong>Ciudad</strong>
+                    <strong>Adultos</strong>
+                    <strong>Niños</strong>
+                    <strong>Entrada</strong>
+                    <strong>Sub-total</strong>
+                    <strong>Acción</strong>
+                </div>
+                @foreach (var detalle in carrito.Detalles)
+                {
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        @if (!string.IsNullOrEmpty(detalle?.Destino?.ImagenUrl))
+                        {
+                            <img src="@detalle?.Destino?.ImagenUrl">
+                        }
+                        else
+                        {
+                            <span class="badge text-bg-dark">N/D</span>
+                        }
+                        <span>@detalle.Destino?.Ciudad</span>
+                        <span>@detalle.CantAdultos</span>
+                        <span>@detalle.CantNinos</span>
+                        <span>@detalle.Destino.PrecioEntrada.ToString("N2")</span>
+                        <span>@detalle.Total.ToString("N2")</span>
+                        <button class="btn btn-sm btn-danger" @onclick="() => EliminarDetalle(detalle.CarritoDetalleId)">🗑</button>
+                    </div>
+                }
+                <div class="list-group-item d-flex justify-content-between align-items-center bg-light">
+                    <strong>Total General:</strong>
+                    <span class="fw-bold text-black">RD$@carrito?.Detalles.Sum(d => d.Total + d.Destino.PrecioEntrada).ToString("N2")</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col">
+            <div class="card">
+                <div class="card-body">
+                    <h4>Información de Pago</h4>
+                    <EditForm Model="tarjeta" OnValidSubmit="ProcesarPago">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+                        @if (!string.IsNullOrEmpty(Mensaje))
+                        {
+                            <div class="alert alert-danger" role="alert">
+                                @Mensaje
+                            </div>
+                        }
+                        <div class="mb-3">
+                            <label class="form-label">Número de Tarjeta</label>
+                            <InputText required maxlength="16" minlength="16"
+                            class="form-control"
+                            placeholder="#### #### #### ####"
+                            pattern="\d{16}"
+                            title="El número de tarjeta debe tener 16 dígitos numéricos"
+                            @bind-Value="tarjeta.NumeroTarjeta" />
+
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Nombre del Titular</label>
+                            <InputText required class="form-control" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ ]+"
+                            title="Solo letras y espacios" minlength="3" maxlength="30"
+                            placeholder="Nombre" @bind-Value="tarjeta.NombreTitular" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Fecha de Expiración</label>
+                            <InputText required class="form-control" placeholder="MM/AA" maxlength="5"
+                            pattern="^(0[1-9]|1[0-2])\/\d{2}$" @bind-Value="tarjeta.FechaExpiracion" @oninput="FormatearFechaExpiracion" @onblur="ValidarFechaExpiracion" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">CVV</label>
+                            <InputText required type="password" class="form-control" maxlength="4" minlength="3" @bind-Value="tarjeta.CVV" />
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Proceder al Pago</button>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private Carrito? carrito;
+    private TarjetaForm tarjeta = new();
+    private string Mensaje { get; set; } = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        carrito = await CarritoService.ObtenerCarritoAsync();
+    }
+
+    private void FormatearFechaExpiracion(ChangeEventArgs e)
+    {
+        Mensaje = "";
+        string valor = e.Value.ToString().Replace("/", "");
+
+        if (valor.Length > 2)
+            valor = valor.Insert(2, "/");
+
+        tarjeta.FechaExpiracion = valor;
+    }
+
+    private void ValidarFechaExpiracion()
+    {
+        Mensaje = "";
+        if (!string.IsNullOrEmpty(tarjeta.FechaExpiracion) && tarjeta.FechaExpiracion.Length == 5)
+        {
+            // Extraer mes y año de la tarjeta
+            var mes = int.Parse(tarjeta.FechaExpiracion.Substring(0, 2));
+            var año = int.Parse(tarjeta.FechaExpiracion.Substring(3, 2));
+
+            var añoActual = DateTime.Now.Year % 100; // Dos últimos dígitos del año actual
+
+            if (año < añoActual || (año == añoActual && mes < DateTime.Now.Month))
+                Mensaje = "La tarjeta ya expiró";
+        }
+    }
+
+
+    private async Task ProcesarPago()
+    {
+        Mensaje = "";
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (!user.Identity?.IsAuthenticated ?? true)
+        {
+            // Guardamos una marca para saber que veníamos del checkout
+            Navigation.NavigateTo($"/Account/Login?returnUrl=/Carrito/Checkout", forceLoad: true);
+            return;
+        }       
+
+        var ListaViajes = new List<Viajes>();
+        var ListaDestinos = new List<Destinos>();
+        foreach (var detalle in carrito.Detalles)
+        {
+            var viaje = new Viajes();
+            if (detalle.Destino.FechaEstipulada < DateTime.Now)
+                viaje.EstadoId = 5;
+            else
+                viaje.EstadoId = 4;
+            viaje.EstadoPagoId = 1;
+            viaje.PrecioFinal += detalle.Destino.PrecioEntrada + detalle.Total;
+            viaje.CantAdultos = detalle.CantAdultos;
+            viaje.CantNinos = detalle.CantNinos;
+            viaje.FechaEstipulada = detalle.Destino.FechaEstipulada;
+            var cliente = await clientesService.BuscarPorUsuarioId(user.FindFirst(c => c.Type == ClaimTypes.NameIdentifier)?.Value);
+            viaje.ClienteId = cliente.ClienteId;
+            viaje.SolicitudViaje = null;
+            viaje.SolicitudViajeId = null;
+            ListaViajes.Add(viaje);
+            detalle.Destino.Cupos = detalle.Destino.Cupos - detalle.CantNinos - detalle.CantAdultos;
+            ListaDestinos.Add(detalle.Destino);
+        }
+        await viajesService.InsertarViajesEnCarrito(ListaViajes);
+        await destinosService.AfectarCuposEnCarrito(ListaDestinos);
+
+        await CarritoService.VaciarCarritoAsync();
+        // Por ahora solo simula
+        carrito = null;
+        tarjeta = new();
+        Navigation.NavigateTo("/Gracias");
+    }
+
+    void Hola() { Console.WriteLine("asdjnaks"); }
+
+    public async Task EliminarDetalle(int detalleId)
+    {
+        await CarritoService.RemoverDelCarritoAsync(detalleId);
+        carrito = await CarritoService.ObtenerCarritoAsync();
+        StateHasChanged();
+    }
+
+    public class TarjetaForm
+    {
+        [CreditCard]
+        public string NumeroTarjeta { get; set; } = "";
+        public string NombreTitular { get; set; } = "";
+        public string FechaExpiracion { get; set; } = "";
+        public string CVV { get; set; } = "";
+    }
+}
