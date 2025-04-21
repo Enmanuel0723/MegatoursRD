@@ -16,6 +16,7 @@
 @inject IdentityRedirectManager RedirectManager
 @inject RoleManager<IdentityRole> RoleManager
 @inject ClientesServices clientesService
+@inject CarritoService CarritoService
 
 <PageTitle>Register</PageTitle>
 
@@ -123,6 +124,7 @@
         await clientesService.Guardar(cliente);
 
         await SignInManager.SignInAsync(user, isPersistent: false);
+        await CarritoService.MigrarCarritoAnonimoAlClienteAsync();
         RedirectManager.RedirectTo(ReturnUrl);
     }
 
