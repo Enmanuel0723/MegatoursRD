@@ -13,8 +13,10 @@ public class Destinos
     public DateTime FechaEstipulada { get; set; } = DateTime.Now;
 	public double PrecioEntrada { get; set; }
 	public string? ImagenUrl { get; set; }
-    [NotMapped]
+	[NotMapped]
+	[Range(0, int.MaxValue, ErrorMessage = "No se permiten valores negativos.")]
 	public int CantNinos { get; set; }
 	[NotMapped]
+	[Range(0, int.MaxValue, ErrorMessage = "No se permiten valores negativos.")]
 	public int CantAdultos { get; set; }
 }
