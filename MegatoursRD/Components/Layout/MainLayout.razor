@@ -1,6 +1,9 @@
 ﻿@using MegatoursRD.Data
 @using Microsoft.AspNetCore.Identity
+
 @inherits LayoutComponentBase
+
+@inject CarritoService carritoService
 
 <div class="page">
     <Toasts class="p-3" AutoHide="true" Delay="4000" Placement="ToastsPlacement.TopRight" />
@@ -17,14 +20,44 @@
                     <div class="d-flex justify-content-end">
                         <a href="Administradores/Index" class="nav-item nav-link">Administradores</a>
                         <a href="Clientes/Index" class="nav-item nav-link">Clientes</a>
+                        <a href="Destinos/Index" class="nav-item nav-link">Destinos</a>
                     </div>
                 </Authorized>
             </AuthorizeView>
 
-            <AuthorizeView>
-                <Authorized>
-                    <div class="d-flex justify-content-end">
+            <div class="d-flex justify-content-end">
+                <AuthorizeView Context="Auth">
+                    <Authorized>
+                        @if (Auth.User.Identity.IsAuthenticated && Auth.User.IsInRole("cliente"))
+                        {
+                            <div class="row align-items-center">
+                                <div class="col">
+                                    <a href="/Carrito/Checkout">
+                                        <img src="/img/carrito.png" style="width: 32px; height: 32px;" alt="Carrito" />
+                                    </a>
+                                </div>
+                                <div class="col">
+                                    <h5 class="mr-3"><span class="badge text-bg-dark">@(Carrito?.Detalles.Count ?? 0)</span></h5>
+                                </div>
+                            </div>
+                        }
+                    </Authorized>
+                    <NotAuthorized>
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <a href="/Carrito/Checkout">
+                                    <img src="/img/carrito.png" style="width: 32px; height: 32px;" alt="Carrito" />
+                                </a>
+                            </div>
+                            <div class="col">
+                                <h5 class="mr-3"><span class="badge text-bg-dark">@(Carrito?.Detalles.Count ?? 0)</span></h5>
+                            </div>
+                        </div>
+                    </NotAuthorized>
+                </AuthorizeView>
 
+                <AuthorizeView>
+                    <Authorized>
                         <span>¡Hola, @NombreUsuarioAutenticado!</span>
                         <div class="dropdown">
                             <a style="cursor: pointer;" class="dropdown-toggle" data-toggle="dropdown">Opciones</a>
@@ -36,18 +69,18 @@
                                     <button type="submit" class="dropdown-item">Cerrar Sesi&oacute;n</button>
                                 </form>
                             </div>
-                        </div>
-                    </div>
-                </Authorized>
-                <NotAuthorized>
-                    <div>
-                        <a href="/Account/Login" class="btn btn-secondary">Iniciar Sesión</a>
-                        <a href="/Account/Register" class="btn btn-secondary">Registrarse</a>
-                    </div>
-                </NotAuthorized>
-            </AuthorizeView>
-        </div>
 
+                        </div>
+                    </Authorized>
+                    <NotAuthorized>
+                        <div>
+                            <a href="/Account/Login" class="btn btn-secondary">Iniciar Sesión</a>
+                            <a href="/Account/Register" class="btn btn-secondary">Registrarse</a>
+                        </div>
+                    </NotAuthorized>
+                </AuthorizeView>
+            </div>
+        </div>
 
         <article class="content px-4">
             @Body
@@ -70,11 +103,22 @@
     [Inject]
     AuthenticationStateProvider AuthStateProvider { get; set; } = null!;
 
+    public Carrito? Carrito { get; set; } = new();
+
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
         var userAutenticado = authState.User;
         NombreUsuarioAutenticado = userAutenticado.Identity.Name;
+        try
+        {
+            Carrito = await carritoService.ObtenerCarritoAsync();
+        }
+        catch (NullReferenceException e)
+        {
+            Console.WriteLine("El usuario loggeado no es un cliente.");
+        }
+        StateHasChanged();
         currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
         NavigationManager.LocationChanged += OnLocationChanged;
     }
