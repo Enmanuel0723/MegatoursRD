@@ -59,7 +59,7 @@
                     </div>
                     <div class="col">
                         <label><strong>Solicitud de Venta *</strong></label>
-                        <InputSelect required class="form-select mb-3" @bind-Value="Viaje.SolicitudViajeId">
+                        <InputSelect required disabled class="form-select mb-3" @bind-Value="Viaje.SolicitudViajeId">
                             <option value="0" selected disabled>--- Selecciona ---</option>
                             @foreach (var solicitud in ListaSolicitudes)
                             {
@@ -119,6 +119,8 @@
         ListaSolicitudes = await solicitudExcursionesService.Listar(x => true);
         ListaGuias = await guiasService.Listar(x => true);
         Viaje = await viajesService.Buscar(ViajeID);
+        if (Viaje.ClienteId != null)
+            Viaje.SolicitudViaje = null;
     }
 
     public async Task Guardar(EditContext editContext)
@@ -143,7 +145,7 @@
 
             if (Guia == null)
             {
-                MensajeError = "La guía seleccionada no existe";
+                MensajeError = "Debe selccionar un guía";
                 return;
             }
 
