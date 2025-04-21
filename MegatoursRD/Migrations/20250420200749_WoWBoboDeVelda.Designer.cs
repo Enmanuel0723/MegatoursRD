@@ -12,18 +12,77 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MegatoursRD.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250403034949_RemovingColumnsFromSomeTables")]
-    partial class RemovingColumnsFromSomeTables
+    [Migration("20250420200749_WoWBoboDeVelda")]
+    partial class WoWBoboDeVelda
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.3")
+                .HasAnnotation("ProductVersion", "9.0.4")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("Carrito", b =>
+                {
+                    b.Property<int>("CarritoId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CarritoId"));
+
+                    b.Property<int?>("ClienteId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("SesionAnonimaId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("CarritoId");
+
+                    b.HasIndex("ClienteId");
+
+                    b.ToTable("Carritos");
+                });
+
+            modelBuilder.Entity("CarritoDetalle", b =>
+                {
+                    b.Property<int>("CarritoDetalleId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CarritoDetalleId"));
+
+                    b.Property<int>("CantAdultos")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CantNinos")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CarritoId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DestinoId")
+                        .HasColumnType("int");
+
+                    b.Property<double>("PrecioAdultos")
+                        .HasColumnType("float");
+
+                    b.Property<double>("PrecioNinos")
+                        .HasColumnType("float");
+
+                    b.HasKey("CarritoDetalleId");
+
+                    b.HasIndex("CarritoId");
+
+                    b.HasIndex("DestinoId");
+
+                    b.ToTable("CarritoDetalles");
+                });
 
             modelBuilder.Entity("MegatoursRD.Data.ApplicationUser", b =>
                 {
@@ -151,9 +210,21 @@ namespace MegatoursRD.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("Cupos")
+                        .HasColumnType("int");
+
                     b.Property<string>("Descripcion")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("FechaEstipulada")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ImagenUrl")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<double>("PrecioEntrada")
+                        .HasColumnType("float");
 
                     b.HasKey("DestinoId");
 
@@ -164,61 +235,91 @@ namespace MegatoursRD.Migrations
                         {
                             DestinoId = 1,
                             Ciudad = "Punta Cana",
-                            Descripcion = "Famosa por sus playas de arena blanca y resorts de lujo. Ideal para actividades acuáticas como snorkel y buceo."
+                            Cupos = 30,
+                            Descripcion = "Famosa por sus playas de arena blanca y resorts de lujo. Ideal para actividades acuáticas como snorkel y buceo.",
+                            FechaEstipulada = new DateTime(2025, 6, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            PrecioEntrada = 2000.0
                         },
                         new
                         {
                             DestinoId = 2,
                             Ciudad = "Samaná",
-                            Descripcion = "Conocida por sus impresionantes paisajes naturales, cascadas y avistamiento de ballenas. La Cascada El Limón es un atractivo popular."
+                            Cupos = 30,
+                            Descripcion = "Conocida por sus impresionantes paisajes naturales, cascadas y avistamiento de ballenas. La Cascada El Limón es un atractivo popular.",
+                            FechaEstipulada = new DateTime(2025, 9, 10, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            PrecioEntrada = 2000.0
                         },
                         new
                         {
                             DestinoId = 3,
                             Ciudad = "Puerto Plata",
-                            Descripcion = "Hogar del teleférico de la Loma Isabel de Torres y hermosas playas como Playa Dorada. Ofrece una rica historia colonial."
+                            Cupos = 30,
+                            Descripcion = "Hogar del teleférico de la Loma Isabel de Torres y hermosas playas como Playa Dorada. Ofrece una rica historia colonial.",
+                            FechaEstipulada = new DateTime(2025, 6, 23, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            PrecioEntrada = 2000.0
                         },
                         new
                         {
                             DestinoId = 4,
                             Ciudad = "La Romana",
-                            Descripcion = "Conocida por Altos de Chavón, una réplica de un pueblo mediterráneo, y las playas de Bayahibe, que son perfectas para el buceo."
+                            Cupos = 30,
+                            Descripcion = "Conocida por Altos de Chavón, una réplica de un pueblo mediterráneo, y las playas de Bayahibe, que son perfectas para el buceo.",
+                            FechaEstipulada = new DateTime(2025, 8, 11, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            PrecioEntrada = 2000.0
                         },
                         new
                         {
                             DestinoId = 5,
                             Ciudad = "Santo Domingo",
-                            Descripcion = "La capital del país, rica en historia y cultura. Visita la Zona Colonial, declarada Patrimonio de la Humanidad por la UNESCO."
+                            Cupos = 30,
+                            Descripcion = "La capital del país, rica en historia y cultura. Visita la Zona Colonial, declarada Patrimonio de la Humanidad por la UNESCO.",
+                            FechaEstipulada = new DateTime(2025, 7, 31, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            PrecioEntrada = 2000.0
                         },
                         new
                         {
                             DestinoId = 6,
                             Ciudad = "Isla Saona",
-                            Descripcion = "Parte del Parque Nacional del Este, famosa por sus playas vírgenes y aguas turquesas. Ideal para excursiones en catamarán."
+                            Cupos = 30,
+                            Descripcion = "Parte del Parque Nacional del Este, famosa por sus playas vírgenes y aguas turquesas. Ideal para excursiones en catamarán.",
+                            FechaEstipulada = new DateTime(2025, 5, 20, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            PrecioEntrada = 2000.0
                         },
                         new
                         {
                             DestinoId = 7,
                             Ciudad = "Jarabacoa",
-                            Descripcion = "Conocida como la 'ciudad de la eterna primavera', es perfecta para el ecoturismo, con actividades como rafting y senderismo."
+                            Cupos = 30,
+                            Descripcion = "Conocida como la 'ciudad de la eterna primavera', es perfecta para el ecoturismo, con actividades como rafting y senderismo.",
+                            FechaEstipulada = new DateTime(2025, 4, 30, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            PrecioEntrada = 2000.0
                         },
                         new
                         {
                             DestinoId = 8,
                             Ciudad = "Lago Enriquillo",
-                            Descripcion = "El lago más grande del Caribe, conocido por su biodiversidad y la posibilidad de ver cocodrilos y flamencos."
+                            Cupos = 30,
+                            Descripcion = "El lago más grande del Caribe, conocido por su biodiversidad y la posibilidad de ver cocodrilos y flamencos.",
+                            FechaEstipulada = new DateTime(2025, 7, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            PrecioEntrada = 2000.0
                         },
                         new
                         {
                             DestinoId = 9,
                             Ciudad = "Parque Nacional Los Haitises",
-                            Descripcion = "Un área protegida con manglares, cuevas y una rica fauna. Ideal para excursiones en bote y exploración de la naturaleza."
+                            Cupos = 30,
+                            Descripcion = "Un área protegida con manglares, cuevas y una rica fauna. Ideal para excursiones en bote y exploración de la naturaleza.",
+                            FechaEstipulada = new DateTime(2025, 12, 10, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            PrecioEntrada = 2000.0
                         },
                         new
                         {
                             DestinoId = 10,
                             Ciudad = "Cabarete",
-                            Descripcion = "Famosa por sus deportes acuáticos, especialmente el kitesurf y el windsurf. También ofrece una vibrante vida nocturna."
+                            Cupos = 30,
+                            Descripcion = "Famosa por sus deportes acuáticos, especialmente el kitesurf y el windsurf. También ofrece una vibrante vida nocturna.",
+                            FechaEstipulada = new DateTime(2025, 11, 11, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            PrecioEntrada = 2000.0
                         });
                 });
 
@@ -258,22 +359,162 @@ namespace MegatoursRD.Migrations
                         new
                         {
                             EstadoId = 4,
-                            Descripcion = "Atrasado"
+                            Descripcion = "Abierto"
                         },
                         new
                         {
                             EstadoId = 5,
-                            Descripcion = "En tiempo"
+                            Descripcion = "Finalizado"
                         });
                 });
 
-            modelBuilder.Entity("MegatoursRD.Models.SolicitudExcursiones", b =>
+            modelBuilder.Entity("MegatoursRD.Models.EstadosDePago", b =>
                 {
-                    b.Property<int>("SolicitudExcursionId")
+                    b.Property<int>("EstadoPagoId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SolicitudExcursionId"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("EstadoPagoId"));
+
+                    b.Property<string>("Descripcion")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("EstadoPagoId");
+
+                    b.ToTable("EstadosDePago");
+
+                    b.HasData(
+                        new
+                        {
+                            EstadoPagoId = 1,
+                            Descripcion = "Pagado"
+                        },
+                        new
+                        {
+                            EstadoPagoId = 2,
+                            Descripcion = "No pagado"
+                        },
+                        new
+                        {
+                            EstadoPagoId = 3,
+                            Descripcion = "Vencido"
+                        });
+                });
+
+            modelBuilder.Entity("MegatoursRD.Models.EstadosOcupacion", b =>
+                {
+                    b.Property<int>("EstadoOcupacionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("EstadoOcupacionId"));
+
+                    b.Property<string>("Descripcion")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("EstadoOcupacionId");
+
+                    b.ToTable("EstadosOcupacion");
+
+                    b.HasData(
+                        new
+                        {
+                            EstadoOcupacionId = 1,
+                            Descripcion = "Disponible"
+                        },
+                        new
+                        {
+                            EstadoOcupacionId = 2,
+                            Descripcion = "Ocupado"
+                        });
+                });
+
+            modelBuilder.Entity("MegatoursRD.Models.EstadosVencimiento", b =>
+                {
+                    b.Property<int>("EstadoVencimientoId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("EstadoVencimientoId"));
+
+                    b.Property<string>("Descripcion")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("EstadoVencimientoId");
+
+                    b.ToTable("EstadosVencimiento");
+
+                    b.HasData(
+                        new
+                        {
+                            EstadoVencimientoId = 1,
+                            Descripcion = "Vigente"
+                        },
+                        new
+                        {
+                            EstadoVencimientoId = 2,
+                            Descripcion = "Vencida"
+                        });
+                });
+
+            modelBuilder.Entity("MegatoursRD.Models.Guias", b =>
+                {
+                    b.Property<int>("GuiaId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("GuiaId"));
+
+                    b.Property<string>("Nombres")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<double>("PrecioGuia")
+                        .HasColumnType("float");
+
+                    b.HasKey("GuiaId");
+
+                    b.ToTable("Guias");
+
+                    b.HasData(
+                        new
+                        {
+                            GuiaId = 1,
+                            Nombres = "Jorge Ceballos",
+                            PrecioGuia = 5500.0
+                        },
+                        new
+                        {
+                            GuiaId = 2,
+                            Nombres = "Alexandra Terrero",
+                            PrecioGuia = 5500.0
+                        },
+                        new
+                        {
+                            GuiaId = 3,
+                            Nombres = "Saúl Cremades",
+                            PrecioGuia = 5500.0
+                        });
+                });
+
+            modelBuilder.Entity("MegatoursRD.Models.SolicitudViajes", b =>
+                {
+                    b.Property<int>("SolicitudViajeId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SolicitudViajeId"));
+
+                    b.Property<string>("Asunto")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("CantAdultos")
                         .HasColumnType("int");
@@ -284,32 +525,35 @@ namespace MegatoursRD.Migrations
                     b.Property<int>("ClienteId")
                         .HasColumnType("int");
 
-                    b.Property<int>("DestinoId")
-                        .HasColumnType("int");
-
                     b.Property<int>("EstadoId")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("Fecha")
+                    b.Property<int>("EstadoOcupacionId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("EstadoVencimientoId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("FechaEstipulada")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("NombreSolicitante")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("IdDestino")
+                        .HasColumnType("int");
 
                     b.Property<string>("Nota")
                         .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("SolicitudExcursionId");
+                    b.Property<double>("Precio")
+                        .HasColumnType("float");
+
+                    b.HasKey("SolicitudViajeId");
 
                     b.HasIndex("ClienteId");
-
-                    b.HasIndex("DestinoId");
 
                     b.ToTable("SolicitudExcursiones");
                 });
 
-            modelBuilder.Entity("MegatoursRD.Models.SolicitudExcursionesDetalle", b =>
+            modelBuilder.Entity("MegatoursRD.Models.SolicitudViajesDetalle", b =>
                 {
                     b.Property<int>("DetalleId")
                         .ValueGeneratedOnAdd()
@@ -317,21 +561,37 @@ namespace MegatoursRD.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DetalleId"));
 
-                    b.Property<double>("PrecioAdultos")
-                        .HasColumnType("float");
+                    b.Property<int>("CantAdultos")
+                        .HasColumnType("int");
 
-                    b.Property<double>("PrecioEntradaDestino")
+                    b.Property<int>("CantNinos")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Ciudad")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Descripcion")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("DestinoId")
+                        .HasColumnType("int");
+
+                    b.Property<double>("PrecioAdultos")
                         .HasColumnType("float");
 
                     b.Property<double>("PrecioNinos")
                         .HasColumnType("float");
 
-                    b.Property<int>("SolicitudExcursionId")
+                    b.Property<int>("SolicitudViajeId")
                         .HasColumnType("int");
 
                     b.HasKey("DetalleId");
 
-                    b.HasIndex("SolicitudExcursionId");
+                    b.HasIndex("DestinoId");
+
+                    b.HasIndex("SolicitudViajeId");
 
                     b.ToTable("SolicitudExcursionesDetalle");
                 });
@@ -344,37 +604,40 @@ namespace MegatoursRD.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ViajeId"));
 
-                    b.Property<int>("ClienteId")
+                    b.Property<int?>("CantAdultos")
                         .HasColumnType("int");
 
-                    b.Property<int>("Cupos")
+                    b.Property<int?>("CantNinos")
                         .HasColumnType("int");
 
-                    b.Property<string>("Destino")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int?>("ClienteId")
+                        .HasColumnType("int");
 
                     b.Property<int>("EstadoId")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("FechaViaje")
+                    b.Property<int>("EstadoPagoId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("FechaEstipulada")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Nota")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int?>("GuiaId")
+                        .HasColumnType("int");
 
                     b.Property<double>("PrecioFinal")
                         .HasColumnType("float");
 
-                    b.Property<int>("SolicitudExcursionId")
+                    b.Property<int?>("SolicitudViajeId")
                         .HasColumnType("int");
 
                     b.HasKey("ViajeId");
 
                     b.HasIndex("ClienteId");
 
-                    b.HasIndex("SolicitudExcursionId");
+                    b.HasIndex("GuiaId");
+
+                    b.HasIndex("SolicitudViajeId");
 
                     b.ToTable("Viajes");
                 });
@@ -512,6 +775,34 @@ namespace MegatoursRD.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("Carrito", b =>
+                {
+                    b.HasOne("MegatoursRD.Models.Clientes", "Cliente")
+                        .WithMany()
+                        .HasForeignKey("ClienteId");
+
+                    b.Navigation("Cliente");
+                });
+
+            modelBuilder.Entity("CarritoDetalle", b =>
+                {
+                    b.HasOne("Carrito", "Carrito")
+                        .WithMany("Detalles")
+                        .HasForeignKey("CarritoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MegatoursRD.Models.Destinos", "Destino")
+                        .WithMany()
+                        .HasForeignKey("DestinoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Carrito");
+
+                    b.Navigation("Destino");
+                });
+
             modelBuilder.Entity("MegatoursRD.Models.Admins", b =>
                 {
                     b.HasOne("MegatoursRD.Data.ApplicationUser", "Usuario")
@@ -534,7 +825,7 @@ namespace MegatoursRD.Migrations
                     b.Navigation("Usuario");
                 });
 
-            modelBuilder.Entity("MegatoursRD.Models.SolicitudExcursiones", b =>
+            modelBuilder.Entity("MegatoursRD.Models.SolicitudViajes", b =>
                 {
                     b.HasOne("MegatoursRD.Models.Clientes", "Cliente")
                         .WithMany()
@@ -542,24 +833,24 @@ namespace MegatoursRD.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("Cliente");
+                });
+
+            modelBuilder.Entity("MegatoursRD.Models.SolicitudViajesDetalle", b =>
+                {
                     b.HasOne("MegatoursRD.Models.Destinos", "Destino")
                         .WithMany()
                         .HasForeignKey("DestinoId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Cliente");
-
-                    b.Navigation("Destino");
-                });
-
-            modelBuilder.Entity("MegatoursRD.Models.SolicitudExcursionesDetalle", b =>
-                {
-                    b.HasOne("MegatoursRD.Models.SolicitudExcursiones", "SolicitudExcursion")
+                    b.HasOne("MegatoursRD.Models.SolicitudViajes", "SolicitudExcursion")
                         .WithMany("ListaDetalles")
-                        .HasForeignKey("SolicitudExcursionId")
+                        .HasForeignKey("SolicitudViajeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Destino");
 
                     b.Navigation("SolicitudExcursion");
                 });
@@ -568,19 +859,22 @@ namespace MegatoursRD.Migrations
                 {
                     b.HasOne("MegatoursRD.Models.Clientes", "Cliente")
                         .WithMany()
-                        .HasForeignKey("ClienteId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("ClienteId");
 
-                    b.HasOne("MegatoursRD.Models.SolicitudExcursiones", "SolicitudExcursiones")
+                    b.HasOne("MegatoursRD.Models.Guias", "Guia")
                         .WithMany()
-                        .HasForeignKey("SolicitudExcursionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .HasForeignKey("GuiaId");
+
+                    b.HasOne("MegatoursRD.Models.SolicitudViajes", "SolicitudViaje")
+                        .WithMany()
+                        .HasForeignKey("SolicitudViajeId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Cliente");
 
-                    b.Navigation("SolicitudExcursiones");
+                    b.Navigation("Guia");
+
+                    b.Navigation("SolicitudViaje");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -634,7 +928,12 @@ namespace MegatoursRD.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("MegatoursRD.Models.SolicitudExcursiones", b =>
+            modelBuilder.Entity("Carrito", b =>
+                {
+                    b.Navigation("Detalles");
+                });
+
+            modelBuilder.Entity("MegatoursRD.Models.SolicitudViajes", b =>
                 {
                     b.Navigation("ListaDetalles");
                 });

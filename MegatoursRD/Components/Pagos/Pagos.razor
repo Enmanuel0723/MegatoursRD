@@ -1,4 +1,4 @@
-﻿@page "/Viajes/Index/{UserID}/{ViajeID:int}-{ClienteID:int}"
+﻿@page "/Viajes/Pagar/{UserID}/{ViajeID:int}-{ClienteID:int}"
 
 @using System.ComponentModel.DataAnnotations
 
@@ -19,9 +19,6 @@
         </div>
     </div>
 </div>
-
-@page "/FormularioPago"
-
 
 <EditForm Model="Tarjeta" OnValidSubmit="ProcesarPago">
     <DataAnnotationsValidator />
@@ -53,10 +50,7 @@
                     <div class="col-md-6">
                         <label class="form-label"><strong>CVV *</strong></label>
                         <div class="input-group">
-                            <input type="@CvvInputType" class="form-control" @bind="Tarjeta.CVV" maxlength="4" required />
-                            <button type="button" class="btn btn-secondary" @onclick="ToggleCvv">
-                                @(MostrarCvv ? "Ocultar" : "Mostrar")
-                            </button>
+                            <input type="password" class="form-control" @bind="Tarjeta.CVV" maxlength="4" minlength="3" required />
                         </div>
                     </div>
                 </div>
@@ -114,8 +108,6 @@
     }
 
     private TarjetaCredito Tarjeta = new();
-    private bool MostrarCvv = false;
-    private string CvvInputType => MostrarCvv ? "text" : "password";
 
     private void FormatearFechaExpiracion(ChangeEventArgs e)
     {
@@ -127,11 +119,6 @@
         }
 
         Tarjeta.FechaExpiracion = valor;
-    }
-
-    private void ToggleCvv()
-    {
-        MostrarCvv = !MostrarCvv;
     }
 
     private async void ProcesarPago()

@@ -10,6 +10,7 @@
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
 @inject UserManager<ApplicationUser> UserManager
+@inject CarritoService CarritoService
 
 
 <PageTitle>Log in</PageTitle>
@@ -94,6 +95,7 @@
         {
             await SignInManager.SignInAsync(user, Input.RememberMe, null);
             Logger.LogInformation("User logged in.");
+            await CarritoService.MigrarCarritoAnonimoAlClienteAsync();
             RedirectManager.RedirectTo(ReturnUrl);
         }
         else

@@ -1,0 +1,97 @@
+﻿@page "/Catalogo"
+
+@rendermode InteractiveServer
+
+@inject DestinosService destinosService
+@inject CarritoService carritoService
+
+<PageTitle>Catálogo</PageTitle>
+
+
+<NavMenu />
+
+
+<div class="container-fluid py-5">
+    <div class="container pt-5 pb-3">
+        <div class="text-center mb-3 pb-3">
+            <h6 class="text-primary text-uppercase" style="letter-spacing: 5px;">Destinos</h6>
+            <h1>Explora Nuestros Destinos</h1>
+            <p class="text-muted">
+                Este catálogo está diseñado para que un solo cliente pueda reservar un cupo en el destino de su elección de forma rápida y sencilla.
+                Si deseas llevar acompañantes o necesitas reservar para un grupo específico de personas, por favor dirígete a la sección de
+                <strong>Solicitudes Personalizadas</strong> donde podrás especificar los detalles de tu viaje.
+            </p>
+        </div>
+
+
+        <div class="row d-flex text-center justify-content-center align-content-center">
+            @foreach (var destino in ListaDestinos)
+            {
+                <div class="card mb-5 mr-lg-5" style="width: 18rem;">
+                    @if (string.IsNullOrEmpty(destino.Ciudad))
+                    {
+                        <img class="img-fluid" src="@destino.ImagenUrl" alt="@destino.Ciudad" style="width: 50px">
+                    }
+                    else
+                    {
+                        <h5><span class="badge mt-5 text-bg-secondary">Imagen no disponible</span></h5>
+                    }
+                    <div class="card-body">
+                        <h5 class="card-title">@destino.Ciudad</h5>
+                        <p class="card-text">@destino.Descripcion</p>
+                        <p class="card-text"><strong>Cupos disponibles: </strong>@destino.Cupos</p>
+                        <p class="card-text">@destino.FechaEstipulada.ToString("dd/MMM/yyyy")</p>
+                        <AuthorizeView Context="Auth">
+                            <Authorized>
+                                @if (Auth.User.IsInRole("cliente"))
+                                {
+                                    <EditForm Model="destino" OnValidSubmit="(() => AgregarAlCarrito(destino.DestinoId, destino.CantAdultos, destino.CantNinos))">
+                                        <label>Adultos</label>
+                                        <InputNumber required placeholder="Adultos" @bind-Value="destino.CantAdultos" class="mb-3 input-group-text"></InputNumber>
+                                        <label>Niños</label>
+                                        <InputNumber required placeholder="Niños" @bind-Value="destino.CantNinos" class="mb-3 input-group-text"></InputNumber>
+                                        <button type="submit" class="btn btn-primary">+ Agregar al carrito</button>
+                                    </EditForm>
+                                }
+                                else
+                                {
+                                    <span>El admin no tiene un carrito</span>
+                                }
+                            </Authorized>
+                            <NotAuthorized>
+                                <EditForm Model="destino" OnValidSubmit="(() => AgregarAlCarrito(destino.DestinoId, destino.CantAdultos, destino.CantNinos))">
+                                    <label>Adultos</label>
+                                    <InputNumber required placeholder="Adultos" @bind-Value="destino.CantAdultos" class="mb-3 input-group-text"></InputNumber>
+                                    <label>Niños</label>
+                                    <InputNumber required placeholder="Niños" @bind-Value="destino.CantNinos" class="mb-3 input-group-text"></InputNumber>
+                                    <button type="submit" class="btn btn-primary">+ Agregar al carrito</button>
+                                </EditForm>
+                            </NotAuthorized>
+                        </AuthorizeView>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    public List<Destinos> ListaDestinos { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        ListaDestinos = await destinosService.Listar(x => true);
+    }
+
+    public async Task AgregarAlCarrito(int destinoId, int cantAdultos, int cantNinos)
+    {
+        if (cantAdultos <= 0 || cantNinos < 0)
+            return;
+
+        if (cantNinos > 0 && cantAdultos <= 0)
+            return;
+
+        await carritoService.AgregarAlCarritoAsync(destinoId, cantAdultos, cantNinos);
+        StateHasChanged();
+    }
+}

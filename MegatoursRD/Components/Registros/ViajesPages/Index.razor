@@ -117,10 +117,10 @@
                                 </Authorized>
                             </AuthorizeView>
                             <th>Guía</th>
-                            <th>Adultos</th>
-                            <th>Niños</th>
                             <th>Estado</th>
                             <th>Estado de pago</th>
+                            <th>Adultos</th>
+                            <th>Niños</th>
                             <th>Fecha Estipulada</th>
                             <th>Monto</th>
                             <th>Acciones</th>
@@ -131,7 +131,7 @@
                         {
                             try
                             {
-                                if (viaje.SolicitudViaje.ClienteId == Cliente.ClienteId || userAutenticado.IsInRole("admin"))
+                                if (viaje.SolicitudViaje?.ClienteId == Cliente.ClienteId || userAutenticado.IsInRole("admin") || viaje.ClienteId == Cliente.ClienteId)
                                 {
                                     <tr>
                                         <td>@viaje.ViajeId</td>
@@ -151,8 +151,6 @@
                                                     break;
                                             }
                                         </td>
-                                        <td>@viaje.SolicitudViaje.CantAdultos</td>
-                                        <td>@viaje.SolicitudViaje.CantNinos</td>
                                         <td>
                                             @switch (viaje.EstadoId)
                                             {
@@ -184,7 +182,18 @@
                                                     break;
                                             }
                                         </td>
-                                        <td>@viaje.SolicitudViaje.FechaEstipulada.ToString("dd/MMM/yyyy")</td>
+                                        @if (viaje.ClienteId != null)
+                                        {
+                                            <td>@viaje.CantAdultos</td>
+                                            <td>@viaje.CantNinos</td>
+                                            <td>@(viaje.FechaEstipulada.HasValue ? viaje.FechaEstipulada.Value.ToString("dd/MMM/yyyy") : "")</td>
+                                        }
+                                        else
+                                        {
+                                            <td>@viaje.SolicitudViaje.CantAdultos</td>
+                                            <td>@viaje.SolicitudViaje.CantNinos</td>
+                                            <td>@viaje.SolicitudViaje.FechaEstipulada</td>
+                                        }
                                         <td>RD$@viaje.PrecioFinal.ToString("N2")</td>
                                         <td>
                                             <div class="dropdown">
@@ -193,7 +202,10 @@
                                                     <a href="/Viajes/View/@UserID/@viaje.ViajeId-@ClienteID" class="dropdown-item">Ver</a>
                                                     <a href="/Viajes/Edit/@UserID/@viaje.ViajeId-@ClienteID" class="dropdown-item">Editar</a>
                                                     <a href="/Viajes/Delete/@UserID/@viaje.ViajeId-@ClienteID" class="dropdown-item">Eliminar</a>
-                                                    <a href="/Viajes/Pagar/@UserID/@viaje.ViajeId-@ClienteID" class="dropdown-item">Pagar</a>
+                                                    @if (viaje.EstadoPagoId == 2)
+                                                    {
+                                                        <a href="/Viajes/Pagar/@UserID/@viaje.ViajeId-@ClienteID" class="dropdown-item">Pagar</a>
+                                                    }
 
                                                     <AuthorizeView Roles="admin">
                                                         <Authorized>
@@ -388,7 +400,7 @@
         valorEnFiltro = string.Empty;
         Desde = null;
         Hasta = null;
-        ListaViajes= await viajesService.Listar(x => true);
+        ListaViajes = await viajesService.Listar(x => true);
     }
 }
 
