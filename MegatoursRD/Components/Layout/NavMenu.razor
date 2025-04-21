@@ -18,11 +18,13 @@
             </button>
             <div class="collapse navbar-collapse justify-content-between px-3" id="navbarCollapse">
                 <div class="navbar-nav ml-auto py-0">
-                    <a href="/" class="nav-item nav-link active">Home</a>
+                    <a href="/" class="nav-item nav-link">Home</a>
+                    <a href="/Catalogo" class="nav-item nav-link">Catálogo</a>
                     <AuthorizeView Roles="admin">
                         <Authorized>
                             <a href="Administradores/Index" class="nav-item nav-link">Administradores</a>
                             <a href="Clientes/Index" class="nav-item nav-link">Clientes</a>
+                            <a href="Destinos/Index" class="nav-item nav-link">Destinos</a>
                         </Authorized>
                     </AuthorizeView>
                     <AuthorizeView Roles="cliente">
