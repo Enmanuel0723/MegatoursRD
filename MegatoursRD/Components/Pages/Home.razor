@@ -5,7 +5,6 @@
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.Identity.EntityFrameworkCore
 @using Microsoft.AspNetCore.WebUtilities
-@using Microsoft.Build.Framework
 @using System.ComponentModel.DataAnnotations
 @using System.Text.Encodings.Web
 @using System.Text
@@ -74,7 +73,14 @@
                     <div class="p-3" style="max-width: 900px;">
                         <h4 class="text-white text-uppercase mb-md-3">Tours & Viajes</h4>
                         <h1 class="display-3 text-white mb-md-4">¡Descubramos el mundo juntos!</h1>
-                        <a href="" class="btn btn-primary py-md-3 px-md-5 mt-2">Reservar Ahora</a>
+                        <AuthorizeView>
+                            <Authorized>
+                                <a href="/Catalogo" class="btn btn-primary py-md-3 px-md-5 mt-2">Ir a catálogo</a>
+                            </Authorized>
+                            <NotAuthorized>
+                                <a href="/Account/Register" class="btn btn-primary py-md-3 px-md-5 mt-2">Reserva Ahora</a>
+                            </NotAuthorized>
+                        </AuthorizeView>
                     </div>
                 </div>
             </div>
@@ -86,7 +92,7 @@
                         <h1 class="display-3 text-white mb-md-4">Descubre Lugares Increibles Con Nosotros</h1>
                         <AuthorizeView>
                             <Authorized>
-                                <a href="/Solicitudes/Create/@UserID" class="btn btn-primary py-md-3 px-md-5 mt-2">Reserva Ahora</a>
+                                <a href="/Catalogo" class="btn btn-primary py-md-3 px-md-5 mt-2">Ir a catálogo</a>
                             </Authorized>
                             <NotAuthorized>
                                 <a href="/Account/Register" class="btn btn-primary py-md-3 px-md-5 mt-2">Reserva Ahora</a>
@@ -134,7 +140,7 @@
                     </div>
                     <AuthorizeView Roles="admin, cliente">
                         <Authorized>
-                            <a href="/Reservaciones" class="btn btn-primary mt-1">Reservar Ahora</a>
+                            <a href="/Catalogo" class="btn btn-primary mt-1">Ir a catálogo</a>
                         </Authorized>
                         <NotAuthorized>
                             <a href="/Account/Register" class="btn btn-primary mt-1">Reservar Ahora</a>
@@ -189,73 +195,6 @@
     </div>
 </div>
 <!-- Feature End -->
-
-<!-- Destination Start -->
-<div class="container-fluid py-5">
-    <div class="container pt-5 pb-3">
-        <div class="text-center mb-3 pb-3">
-            <h6 class="text-primary text-uppercase" style="letter-spacing: 5px;">Destinos</h6>
-            <h1>Explora Nuestros Destinos</h1>
-        </div>
-        <div class="row">
-            <div class="col-lg-4 col-md-6 mb-4">
-                <div class="destination-item position-relative overflow-hidden mb-2">
-                    <img class="img-fluid" src="img/destination-1.jpg" alt="">
-                    <a class="destination-overlay text-white text-decoration-none" href="">
-                        <h5 class="text-white">United States</h5>
-                        <span>100 Cities</span>
-                    </a>
-                </div>
-            </div>
-            <div class="col-lg-4 col-md-6 mb-4">
-                <div class="destination-item position-relative overflow-hidden mb-2">
-                    <img class="img-fluid" src="img/destination-2.jpg" alt="">
-                    <a class="destination-overlay text-white text-decoration-none" href="">
-                        <h5 class="text-white">United Kingdom</h5>
-                        <span>100 Cities</span>
-                    </a>
-                </div>
-            </div>
-            <div class="col-lg-4 col-md-6 mb-4">
-                <div class="destination-item position-relative overflow-hidden mb-2">
-                    <img class="img-fluid" src="img/destination-3.jpg" alt="">
-                    <a class="destination-overlay text-white text-decoration-none" href="">
-                        <h5 class="text-white">Australia</h5>
-                        <span>100 Cities</span>
-                    </a>
-                </div>
-            </div>
-            <div class="col-lg-4 col-md-6 mb-4">
-                <div class="destination-item position-relative overflow-hidden mb-2">
-                    <img class="img-fluid" src="img/destination-4.jpg" alt="">
-                    <a class="destination-overlay text-white text-decoration-none" href="">
-                        <h5 class="text-white">India</h5>
-                        <span>100 Cities</span>
-                    </a>
-                </div>
-            </div>
-            <div class="col-lg-4 col-md-6 mb-4">
-                <div class="destination-item position-relative overflow-hidden mb-2">
-                    <img class="img-fluid" src="img/destination-5.jpg" alt="">
-                    <a class="destination-overlay text-white text-decoration-none" href="">
-                        <h5 class="text-white">South Africa</h5>
-                        <span>100 Cities</span>
-                    </a>
-                </div>
-            </div>
-            <div class="col-lg-4 col-md-6 mb-4">
-                <div class="destination-item position-relative overflow-hidden mb-2">
-                    <img class="img-fluid" src="img/destination-6.jpg" alt="">
-                    <a class="destination-overlay text-white text-decoration-none" href="">
-                        <h5 class="text-white">Indonesia</h5>
-                        <span>100 Cities</span>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-<!-- Destination Start -->
 
 <!-- Service Start -->
 <div class="container-fluid py-5">
